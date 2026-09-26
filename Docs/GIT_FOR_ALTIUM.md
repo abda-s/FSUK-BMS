@@ -9,6 +9,14 @@ the first time; after that you'll only need the "Day-to-day workflow" section.
 2. [Git LFS](https://git-lfs.com/) — download, run the installer.
 3. [TortoiseGit](https://tortoisegit.org/) — install, and when it asks, let it
    use the Git you just installed. Reboot if it asks you to.
+   - **If the installer stops with an error about "Microsoft Visual C++
+     2015-2022 Redistributable" being required:** install that first, then
+     re-run the TortoiseGit installer.
+     - Download: https://aka.ms/vs/17/release/vc_redist.x64.exe (this is the
+       one almost everyone needs — normal 64-bit Windows).
+     - Run it (Install → Close, no options to change), then retry TortoiseGit.
+     - If TortoiseGit still complains after that, also install
+       https://aka.ms/vs/17/release/vc_redist.x86.exe and try again.
 4. Make a free [GitHub](https://github.com) account if you don't have one, and
    ask the repo owner to invite you as a collaborator on the repo.
 
