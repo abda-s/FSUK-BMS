@@ -106,3 +106,30 @@ you're done.
 If you're ever unsure what state the repo is in, right-click → **TortoiseGit →
 Show Log** shows the full history, and **Check for Modifications** shows what's
 changed locally vs. what's on GitHub.
+
+## 7. Altium says a sheet "could not be found" / is "marked as missing"
+
+If Altium reports errors like `Top.SchDoc could not be found... marked as
+missing`, and/or the Git log shows a warning like `LFS repository '...' is not
+supported`, it means Git LFS didn't actually download the real file content —
+you (or Altium's built-in git panel, which doesn't understand LFS and can be
+ignored) ended up with tiny placeholder "pointer" text files instead of the
+real binary `.SchDoc`/`.PcbDoc` files. This usually happens if Git LFS wasn't
+installed yet at the time you cloned.
+
+Fix, in Command Prompt inside the repo folder:
+
+```
+git lfs version
+```
+
+- If that says the command isn't recognized, install Git LFS from
+  https://git-lfs.com/ first, then continue.
+
+```
+git lfs install
+git lfs pull
+```
+
+`git lfs pull` replaces the placeholder files with the real content. Close and
+reopen the project in Altium afterwards.
