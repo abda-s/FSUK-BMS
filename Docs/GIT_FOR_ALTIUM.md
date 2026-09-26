@@ -1,0 +1,100 @@
+# Git + TortoiseGit for this repo — step by step
+
+This is written for someone who has never used Git before. Follow it in order
+the first time; after that you'll only need the "Day-to-day workflow" section.
+
+## 1. Install the tools (once)
+
+1. [Git for Windows](https://git-scm.com/downloads) — default options are fine.
+2. [Git LFS](https://git-lfs.com/) — download, run the installer.
+3. [TortoiseGit](https://tortoisegit.org/) — install, and when it asks, let it
+   use the Git you just installed. Reboot if it asks you to.
+4. Make a free [GitHub](https://github.com) account if you don't have one, and
+   ask the repo owner to invite you as a collaborator on the repo.
+
+## 2. Clone the repo (once)
+
+Cloning = downloading your own local copy of the whole project, including its
+full history.
+
+1. Make a folder somewhere sensible, e.g. `C:\FSAE\`.
+2. Right-click inside that folder → **Git Clone...**
+3. Paste the repo URL (the owner will give you this — looks like
+   `https://github.com/<owner>/FSUK-BMS.git`).
+4. Click OK. TortoiseGit downloads everything.
+5. Open a Command Prompt / PowerShell **inside the cloned folder** and run:
+   ```
+   git lfs install
+   ```
+   This is a one-time step per computer — it teaches Git on your machine how to
+   handle the large Altium/PDF files properly. If you skip this, the Altium
+   files you download will just be tiny placeholder text files that Altium
+   can't open.
+
+## 3. Why you'll "lock" files before editing
+
+The `.SchDoc`, `.PcbDoc`, `.SchLib`, and `.PcbLib` files in this repo are binary
+(not text), so Git can't merge two people's changes to the same file the way it
+can with code. If you and your teammate both edit `Top.SchDoc` and both push,
+whoever pushes second will hit a conflict Git cannot auto-resolve, and someone
+loses work.
+
+The fix: **lock the file before you start editing it.** This tells GitHub "I'm
+working on this, don't let anyone else push changes to it," and makes it
+read-only on their machine until you unlock it.
+
+## 4. Day-to-day workflow
+
+**Before you start working, every time:**
+
+1. Right-click the repo folder → **TortoiseGit → Pull.** Get the latest version
+   of everything.
+
+**Before you edit a specific Altium file:**
+
+2. Right-click that specific file (e.g. `Top.SchDoc`) → **TortoiseGit → Lock.**
+   - If it's already locked by someone else, TortoiseGit will tell you — message
+     them, don't edit it, work on something else until they unlock it.
+3. Now edit it in Altium as normal, and save.
+
+**After you're done editing (same session, or end of day):**
+
+4. Right-click the repo folder → **TortoiseGit → Commit...**
+   - Tick the files you changed.
+   - Write a short message saying what you did, e.g. `Add CAN transceiver
+     circuit to CAN.SchDoc`.
+   - Click Commit.
+5. Right-click the repo folder → **TortoiseGit → Push.** This uploads your
+   commit to GitHub so your teammate can pull it.
+6. Right-click the file(s) you locked → **TortoiseGit → Unlock**, so your
+   teammate can lock and edit them next.
+
+That's the whole loop: **Pull → Lock → Edit → Commit → Push → Unlock.**
+
+## 5. Rules of thumb
+
+- **Never sit on a lock.** Lock right before you edit, unlock as soon as you've
+  pushed. A file locked overnight for no reason just blocks your teammate.
+- **`Top.SchDoc` in each project is the one everybody wants to touch.** Always
+  lock it first, make your change, and push quickly — don't leave it locked
+  while you go do something else.
+- **Pull before every session.** If you open Altium on an old version of a file
+  and edit it, you're wasting work — you'll have to redo it on top of the
+  latest version anyway.
+- **If a push is rejected** ("failed, non-fast-forward" or similar): someone
+  pushed before you. Pull first (TortoiseGit will merge or tell you if there's
+  a real conflict — for binary/locked files this should be rare if everyone
+  locks properly), then push again.
+- **Commit messages**: one line, plain English, say what changed — e.g.
+  `Fix balancing FET footprint`, `Route power sheet`, `Add EU DoC datasheet`.
+
+## 6. If something looks stuck
+
+If a file shows as locked by you but you're not actually editing it anymore
+(e.g. you forgot to unlock last time), just unlock it — locks are just a
+courtesy flag, not a hard technical restriction, and safe to release once
+you're done.
+
+If you're ever unsure what state the repo is in, right-click → **TortoiseGit →
+Show Log** shows the full history, and **Check for Modifications** shows what's
+changed locally vs. what's on GitHub.

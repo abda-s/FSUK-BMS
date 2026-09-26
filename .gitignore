@@ -1,0 +1,23 @@
+# Altium local backup history (git is our version control now, don't need Altium's too)
+**/History/
+
+# Altium auto-generated preview thumbnails (regenerated on open, just noise/conflicts)
+**/__Previews/
+
+# Altium generated output folders (regenerate these from source, don't commit them)
+Project Outputs for */
+Project Logs for */
+Advanced PCB Footprint Reports for */
+Assembly Outputs for */
+
+# Altium temp/backup files
+*.~*
+*.PcbDoc~
+*.SchDoc~
+*.PrjPcb~
+*.bak
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
