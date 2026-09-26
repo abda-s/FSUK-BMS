@@ -29,7 +29,16 @@ separate BOMs and separate release cycles, so this keeps things simple.
 4. Clone this repo (see below), then in the cloned folder run once:
    ```
    git lfs install
+   git lfs pull
    ```
+   Check that the `Sheets\` folders contain `.SchDoc` files before opening
+   Altium. If Altium says sheets are "missing", see **Troubleshooting** in
+   `Docs/GIT_FOR_ALTIUM.md`.
+5. Set your Git name/email and sign in to GitHub — see step 2 of
+   `Docs/GIT_FOR_ALTIUM.md`.
+
+Use TortoiseGit or the command line for all Git operations — **not** Altium's
+built-in Git support, which doesn't handle Git LFS.
 
 ## Why Git LFS + file locking (read this before editing anything)
 

@@ -38,6 +38,27 @@ full history.
    handle the large Altium/PDF files properly. If you skip this, the Altium
    files you download will just be tiny placeholder text files that Altium
    can't open.
+6. Still in that same window, run:
+   ```
+   git lfs pull
+   ```
+   This downloads the real Altium/PDF files. Then check that
+   `BMS-Master\Sheets\` and `BMS-Module\Sheets\` actually contain `.SchDoc`
+   files before you open anything in Altium.
+7. Tell Git who you are (once per computer), using your GitHub username and
+   the email on your GitHub account:
+   ```
+   git config --global user.name "your-github-username"
+   git config --global user.email "you@example.com"
+   ```
+   This is the name that shows up on your commits.
+8. Sign in to GitHub (once per computer):
+   ```
+   git credential-manager github login
+   ```
+   A browser window opens — approve it. (If you skip this, the same sign-in
+   pops up automatically the first time you push.) You also need to have been
+   added as a collaborator on the repo, or your pushes will be rejected.
 
 ## 3. Why you'll "lock" files before editing
 
@@ -107,17 +128,19 @@ If you're ever unsure what state the repo is in, right-click → **TortoiseGit �
 Show Log** shows the full history, and **Check for Modifications** shows what's
 changed locally vs. what's on GitHub.
 
-## 7. Altium says a sheet "could not be found" / is "marked as missing"
+## 7. Troubleshooting
+
+### Altium says a sheet "could not be found" / is "marked as missing"
 
 If Altium reports errors like `Top.SchDoc could not be found... marked as
-missing`, and/or the Git log shows a warning like `LFS repository '...' is not
-supported`, it means Git LFS didn't actually download the real file content —
-you (or Altium's built-in git panel, which doesn't understand LFS and can be
-ignored) ended up with tiny placeholder "pointer" text files instead of the
-real binary `.SchDoc`/`.PcbDoc` files. This usually happens if Git LFS wasn't
-installed yet at the time you cloned.
+missing`, it means Git LFS didn't actually download the real file content —
+you ended up with tiny placeholder "pointer" text files (or nothing at all, so
+the `Sheets\` folders are empty) instead of the real binary
+`.SchDoc`/`.PcbDoc` files. This usually happens if Git LFS wasn't installed
+yet at the time you cloned, or the repo was cloned from inside Altium.
 
-Fix, in Command Prompt inside the repo folder:
+Fix — close Altium, open a Command Prompt / PowerShell in the repo folder, and
+run:
 
 ```
 git lfs version
@@ -128,8 +151,26 @@ git lfs version
 
 ```
 git lfs install
+git reset
 git lfs pull
 ```
 
-`git lfs pull` replaces the placeholder files with the real content. Close and
-reopen the project in Altium afterwards.
+- `git reset` only un-stages anything Git has queued up for the next commit;
+  it doesn't touch the files on disk. It's there because in this situation Git
+  often ends up with every file staged as **deleted** (see the warning below).
+- `git lfs pull` replaces the placeholder files with the real content.
+
+Then run `git status` — it should say `nothing to commit, working tree clean`.
+Close and reopen the project in Altium afterwards.
+
+> **Warning:** before every commit, look at the list of files. If you see lots
+> of files marked as **deleted** that you didn't delete, **do not commit or
+> push** — that would delete the whole project from GitHub for everyone. Run
+> the fix above instead.
+
+### Altium warns "LFS repository '…' is not supported"
+
+Altium has its own built-in Git panel, and it doesn't understand Git LFS.
+The warning itself is harmless and can be ignored, but it means: **don't use
+Altium's own Git buttons** (commit / update / clone) on this repo. Always use
+TortoiseGit or the command line, which handle LFS properly.
