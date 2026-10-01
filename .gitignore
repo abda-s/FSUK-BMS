@@ -5,6 +5,7 @@
 **/__Previews/
 
 # Altium generated output folders (regenerate these from source, don't commit them)
+**/Project Outputs/
 Project Outputs for */
 Project Logs for */
 Advanced PCB Footprint Reports for */
@@ -16,6 +17,10 @@ Assembly Outputs for */
 *.SchDoc~
 *.PrjPcb~
 *.bak
+
+# Original TI download archives — redundant once extracted into the repo
+# (kept on disk for reference, just not duplicated into LFS storage)
+tidmc07.zip
 
 # OS junk
 Thumbs.db
