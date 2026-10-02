@@ -174,3 +174,30 @@ Altium has its own built-in Git panel, and it doesn't understand Git LFS.
 The warning itself is harmless and can be ignored, but it means: **don't use
 Altium's own Git buttons** (commit / update / clone) on this repo. Always use
 TortoiseGit or the command line, which handle LFS properly.
+
+### A laptop holding a lock breaks/is lost — how do we get the file back?
+
+The lock is **not** stored on that laptop — it's a record on GitHub's servers,
+tied to the person's account. The laptop breaking doesn't trap the lock
+anywhere unreachable; it just means that person can't be the one to release it
+themselves.
+
+Only a GitHub **Admin** on the repo can force-unlock someone else's lock (not
+just anyone with push access). The repo owner always has Admin, so they can
+always do this even if nobody else can.
+
+As the Admin, from any working machine:
+
+1. See what's locked: `git lfs locks`
+2. Force it open: `git lfs unlock --force "path\to\File.SchDoc"`
+   (In TortoiseGit: right-click the file → Unlock. Since you're Admin, it'll
+   let you force-unlock a lock someone else holds.)
+3. The file is free — anyone can lock and edit it normally now.
+
+**This only clears the lock flag.** It does not recover any edits that only
+existed on the dead laptop and were never pushed — that work is genuinely
+gone, the same way it would be with or without locking. Anything that *was*
+committed and pushed is already safe, sitting on GitHub and in the other
+person's local clone. This is exactly why the day-to-day workflow says not to
+sit on a lock: push right after you finish editing, and the most you could
+ever lose to a dead laptop is whatever you did since your last push.
