@@ -22,6 +22,12 @@ Assembly Outputs for */
 # (kept on disk for reference, just not duplicated into LFS storage)
 tidmc07.zip
 
+# Cloned third-party open-source BMS repos — local study reference only.
+# Not ours to redistribute (unclear/no license on some of them), and large
+# (100-200MB+ each). See Reference Docs/Open-Source BMS Projects/README.md
+# for what's there and how to re-clone.
+Reference Docs/Open-Source BMS Projects/*/
+
 # OS junk
 Thumbs.db
 Desktop.ini
