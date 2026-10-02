@@ -18,6 +18,12 @@ FSUK-BMS/
 open each one on its own (no shared workspace file). They're separate boards with
 separate BOMs and separate release cycles, so this keeps things simple.
 
+**Design documentation lives in each board's own `README.md`**
+(`BMS-Master/README.md`, `BMS-Module/README.md`) — block diagram and a `##`
+section per major design decision (MCU selection, etc.). Add new decisions as
+a new section there rather than a new standalone file, so each board has one
+place anyone can land on and read top to bottom.
+
 ## One-time setup (do this before opening anything in Altium)
 
 1. Install [Git](https://git-scm.com/downloads).

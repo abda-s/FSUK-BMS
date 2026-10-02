@@ -1,19 +1,15 @@
-# BMS-Master MCU Selection
+# BMS-Master
 
-## Decision
+Controller board for the FSUK accumulator: bridges to the daisy-chained
+cell-monitor stack (`BMS-Module`, x6) via a BQ79600-Q1, runs the safety logic
+(limit checks, SoC estimation, balancing control, fault latch), and talks two
+CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
 
-**STM32G474** (fallback: **STM32G473**, pin/feature-compatible — use only if G474 is out of stock).
+This file is the design-documentation hub for this board — add a new `##`
+section here for each major design decision rather than creating a new
+standalone file per topic.
 
-It's the only candidate that passes every "Must" requirement *and* leads on
-every "Nice to have" — built-in op-amps/PGAs, the most ADCs, and 3x FDCAN
-peripherals with room to spare. Several other candidates also pass all
-must-haves (see the full matrix below), but none of them beat G474 on
-anything — they're sideways-or-worse choices, not real alternatives.
-
-## Context: what this MCU actually has to do
-
-This is the controller at the center of `BMS-Master` — see `block-diagram.png`
-in this folder for the full picture. In short, the STM32 is the thing that:
+## Block diagram
 
 ![BMS-Master Block Diagram](block-diagram.png)
 
@@ -23,7 +19,7 @@ in this folder for the full picture. In short, the STM32 is the thing that:
 - Runs **cell/temperature limit checks, SoC estimation, balancing control,
   and the fault latch** — the actual safety logic.
 - Drives the **AMS fault relay** — a single signal that opens the shutdown
-  circuit (SDC) directly, not routed through the ECU over CAN. This must work
+  circuit (SDC) directly, not routed through the ECU over CAN. Must work
   correctly whether the car is driving or charging.
 - Talks **two separate CAN buses**: CAN1 (full telemetry — all 96 cells, 192
   temperatures, balancing state, current, voltage) and CAN2 (summarized
@@ -33,9 +29,18 @@ in this folder for the full picture. In short, the STM32 is the thing that:
 - Is watched by an **external watchdog** that opens the relay if the MCU
   hangs.
 
-That function list is where the requirements below come from.
+## MCU selection: STM32G474
 
-## Requirements and why they matter
+**STM32G474** (fallback: **STM32G473**, pin/feature-compatible — use only if
+G474 is out of stock).
+
+It's the only candidate that passes every "Must" requirement *and* leads on
+every "Nice to have" — built-in op-amps/PGAs, the most ADCs, and 3x FDCAN
+peripherals with room to spare. Several other candidates also pass all
+must-haves (see the full matrix below), but none of them beat G474 on
+anything — they're sideways-or-worse choices, not real alternatives.
+
+### Requirements and why they matter
 
 | # | Requirement | Priority | Why |
 |---|---|---|---|
@@ -49,15 +54,15 @@ That function list is where the requirements below come from.
 | 8 | GPIO: 2 EXTI inputs + relay, watchdog, opto outputs, switch input | **Must** | Specifically: `SPI_RDY`, `NFAULT`, AMS relay, watchdog toggle, charger opto, balancing switch. |
 | 9 | Deep CAN buffering (non-blocking TX) | Should | Telemetry must never block the safety path (AMS relay, fault latch, watchdog). |
 
-## Candidates evaluated
+### Candidates evaluated
 
 STM32G474, STM32G473, STM32G491, STM32G431, STM32H503, STM32H523/H563,
 STM32H723/H743, STM32F446, STM32F405, STM32F413, STM32F429/F407, STM32G0B1,
-STM32F303 — chosen as a spread across ST's current CAN-capable families
-(G4, H5, H7, F4, G0) plus F3 as the one real-world precedent we'd already
-found (ENNOID-BMS uses an F303).
+STM32F303 — a spread across ST's current CAN-capable families (G4, H5, H7,
+F4, G0) plus F3 as a real-world precedent (ENNOID-BMS uses an F303 — see
+`Reference Docs/Open-Source BMS Projects/README.md`).
 
-## Comparison matrix
+### Comparison matrix
 
 | Requirement | Priority | G474 | G473 | G491 | G431 | H503 | H523/H563 | H723/H743 | F446 | F405 | F413 | F429/F407 | G0B1 | F303 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -76,7 +81,7 @@ found (ENNOID-BMS uses an F303).
 > silicon.** The "Verify" cells above (H503's CAN count in particular) are
 > known open questions.
 
-## Verdict summary
+### Verdict summary
 
 | Variant | Must-haves met (of 6) | Should/Nice met (of 3) | Result | One-line verdict |
 |---|---|---|---|---|
@@ -94,7 +99,7 @@ found (ENNOID-BMS uses an F303).
 | STM32G0B1 | 4/6 | 2/3 | **Fails a must-have** | No FPU. Minimal-cost option only. |
 | STM32F303 | 5/6 | 0/3 | **Fails a must-have** | Out: only one CAN, and it's shared with USB packet SRAM. |
 
-## Why G474 specifically, not just "any passing candidate"
+### Why G474 specifically, not just "any passing candidate"
 
 Six candidates pass every must-have (G474, G473, H523/H563, H723/H743, F446,
 F405, F413, F429/F407). Among those, G474 wins because it's the only one that
@@ -111,16 +116,15 @@ this board needs for no actual benefit here.
 count) — it's listed purely as a drop-in fallback if G474 specifically is
 out of stock.
 
-## Package note
+### Package note
 
 G474 in an **LQFP64** package has enough pins for everything in the block
-diagram with spare pins left over for SWD/debug — confirmed sufficient in the
-Notes tab of the source sheet.
+diagram with spare pins left over for SWD/debug.
 
-## Sources
+### Sources
 
 - Full requirements matrix, per-cell notes, and rationale:
   [Google Sheet — stm32_requirements_matrix](https://docs.google.com/spreadsheets/d/1AgWugIduUw6VQksLgAckyC9UT4bKEkQZ88cZwor0tiw/edit?usp=sharing)
 - BQ79600-Q1 datasheet and app notes: `Reference Docs/BQ796xx BMS/`
-- Real-world FSAE/BMS precedent for STM32 MCU choices: see chat history /
+- Real-world FSAE/BMS precedent for STM32 MCU choices:
   `Reference Docs/Open-Source BMS Projects/README.md`
