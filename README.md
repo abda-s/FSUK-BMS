@@ -56,8 +56,18 @@ read-only for everyone else until you unlock it. See the workflow section below.
 1. **Pull** the latest changes before you start working.
 2. **Lock** the specific file(s) you're about to edit.
 3. Edit in Altium, save.
-4. **Commit** with a short message describing what changed.
-5. **Push.**
-6. **Unlock** the file(s) so someone else can edit them next.
+4. **Run the project's Output Job** (`BMS-Master.OutJob` / `BMS-Module.OutJob`,
+   visible in the Projects panel) to regenerate the schematic PDF — right-click
+   it → **Run**. First time you run it, Altium may ask where to save the PDF;
+   point it at a `Project Outputs` folder inside the project (already
+   git-ignored) and it'll remember that choice afterwards.
+5. **Commit** with a short message describing what changed (include the
+   regenerated PDF in the commit).
+6. **Push.**
+7. **Unlock** the file(s) so someone else can edit them next.
+
+The Output Job means anyone can open the latest schematic PDF straight from
+GitHub without needing Altium installed — handy for reviewing on a phone/
+laptop that doesn't have it.
 
 See `Docs/GIT_FOR_ALTIUM.md` for the exact TortoiseGit click-by-click steps.
