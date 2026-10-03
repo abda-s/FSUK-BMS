@@ -114,10 +114,47 @@ That's the whole loop: **Pull → Lock → Edit → Commit → Push → Unlock.*
   pushed before you. Pull first (TortoiseGit will merge or tell you if there's
   a real conflict — for binary/locked files this should be rare if everyone
   locks properly), then push again.
-- **Commit messages**: one line, plain English, say what changed — e.g.
-  `Fix balancing FET footprint`, `Route power sheet`, `Add EU DoC datasheet`.
+- **Commit messages follow the format below.** See section 6.
 
-## 6. If something looks stuck
+## 6. Commit message format
+
+`<type>(<board>): <summary>` — scope is `master`, `module`, or omitted for
+changes that aren't tied to one board.
+
+| Type | For |
+|---|---|
+| `sch` | Schematic edits (`.SchDoc`) |
+| `pcb` | PCB layout edits (`.PcbDoc`) |
+| `lib` | Library edits (`.SchLib`/`.PcbLib`) |
+| `fix` | Correcting a mistake in a previous commit |
+| `docs` | README / `Docs/` changes |
+| `ref` | `Reference Docs/` additions or reorganization |
+| `repo` | Repo config — `.gitignore`, `.gitattributes`, OutJob setup, git/LFS setup |
+
+Rules:
+
+1. Imperative mood — "Add", "Fix", "Move", not "Added"/"Fixed".
+2. Summary line ≤ 72 chars, no trailing period.
+3. Name the sheet/file when the type alone doesn't make it obvious.
+   `BMS-Master/Sheets/Connectors.SchDoc` and `BMS-Module/Sheets/Connectors.SchDoc`
+   are both real files — the `(board)` scope is what tells them apart, not the
+   filename alone.
+4. Body text (blank line, then free text) only when the summary alone doesn't
+   explain *why*.
+
+Examples:
+
+- `sch(master): add CAN transceiver to CAN.SchDoc`
+- `sch(module): add balancing FET to Balancing.SchDoc`
+- `fix(master): correct balancing FET footprint`
+- `docs(master): add STM32G474 selection rationale`
+- `ref: organize randoms folder into Academic Theses and Community Board Examples`
+- `repo: track images via LFS, ignore Project Outputs`
+
+This convention started partway through the project, so older commits in the
+history don't follow it — that's fine, it applies going forward only.
+
+## 7. If something looks stuck
 
 If a file shows as locked by you but you're not actually editing it anymore
 (e.g. you forgot to unlock last time), just unlock it — locks are just a
@@ -128,7 +165,7 @@ If you're ever unsure what state the repo is in, right-click → **TortoiseGit �
 Show Log** shows the full history, and **Check for Modifications** shows what's
 changed locally vs. what's on GitHub.
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 ### Altium says a sheet "could not be found" / is "marked as missing"
 
