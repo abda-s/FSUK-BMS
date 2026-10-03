@@ -23,7 +23,7 @@ after that you only need section 4 (Day-to-day workflow).
 
 1. Make a folder, e.g. `C:\FSUK\`.
 2. Right-click inside it → **Git Clone...**
-3. Paste the repo URL (`https://github.com/<owner>/FSUK-BMS.git`).
+3. Paste the repo URL: `https://github.com/abda-s/FSUK-BMS.git`
 4. Click OK.
 5. Open Command Prompt / PowerShell **inside the cloned folder**, run:
    ```
