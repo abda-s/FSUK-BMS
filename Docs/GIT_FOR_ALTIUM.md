@@ -21,7 +21,7 @@ after that you only need section 4 (Day-to-day workflow).
 
 ## 2. Clone the repo (once)
 
-1. Make a folder, e.g. `C:\FSAE\`.
+1. Make a folder, e.g. `C:\FSUK\`.
 2. Right-click inside it → **Git Clone...**
 3. Paste the repo URL (`https://github.com/<owner>/FSUK-BMS.git`).
 4. Click OK.
