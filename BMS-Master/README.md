@@ -112,11 +112,19 @@ LQFP64 — enough pins for everything above, with spares for SWD/debug.
 - `Reference Docs/BQ796xx BMS/` — BQ79600-Q1 datasheet and app notes
 - `Reference Docs/Open-Source BMS Projects/README.md` — real-world STM32 MCU precedent
 
-## CAN transceiver selection: TCAN1462V-Q1
+## CAN transceiver selection
 
-Decision: **TCAN1462V-Q1** (SOIC-8, `TCAN1462VDRQ1`), on both CAN1 and CAN2.
-VIO tied to the 3.3V rail (same rail as the STM32) for direct 3.3V logic
-interfacing; VCC on the existing 5V rail.
+**v1 (this prototype): TCAN1042V-Q1** (SOIC-8, `TCAN1042VDRQ1`, LCSC `C485806`),
+on both CAN1 and CAN2. VIO tied to the 3.3V rail (same rail as the STM32) for
+direct 3.3V logic interfacing; VCC on the existing 5V rail.
+
+**v2 (target): TCAN1462V-Q1.** This was the original pick — see rationale
+below — but as of this prototype, LCSC (the team's only supplier) has the
+SOIC-8 `TCAN1462VDRQ1` out of stock, with only the VSON-8 `TCAN1462VDRBRQ1`
+(leadless, needs reflow/hot air) in stock. v1 is hand-soldered, so v1 uses
+TCAN1042V-Q1 instead — fully valid, same vendor, same AEC-Q100 grade, same
+Functional Safety documentation, just without SIC. **Check LCSC stock for
+SOIC-8 `TCAN1462VDRQ1` before starting v2**, and switch to it if available.
 
 ### Isolation: not required
 
@@ -151,7 +159,7 @@ datasheet (`Reference Docs/CAN Transceivers/`):
 | Functional Safety docs | Yes | Yes | No | No |
 | Distinguishing feature | SIC — reduces ringing on multi-stub topologies | Direct TI/BQ79616 precedent | — | — |
 
-### Why TCAN1462V-Q1 over TCAN1042V-Q1
+### Why TCAN1462V-Q1 over TCAN1042V-Q1 (the v2 reasoning)
 
 Both are fully valid (same vendor, same AEC-Q100 grade, same Functional
 Safety documentation). TCAN1462V-Q1 was chosen for **SIC** (Signal
@@ -161,7 +169,9 @@ multiple unterminated stubs, which fits a car harness with several CAN nodes
 MCP2562FD was ruled out for lacking confirmed AEC-Q100 qualification.
 TJA1057 is AEC-Q100 qualified but has no Functional Safety documentation and
 no SIC — ruled out in favor of staying in the same TI ecosystem as the rest
-of the signal chain (BQ79600-Q1 → BQ79616 → TCAN1462V-Q1).
+of the signal chain (BQ79600-Q1 → BQ79616 → CAN transceiver). v1 uses
+TCAN1042V-Q1 instead purely for hand-solder package/stock availability, not
+because the SIC reasoning changed.
 
 ### Sources
 
