@@ -136,8 +136,6 @@ mean what it implies.
 |---|---|
 | 3.3V logic (VIO) | Must interface directly with the STM32G474's 3.3V GPIO, no external level shifter. |
 | Automotive-grade (AEC-Q100) | Board sees vibration, heat near HV equipment, and electrical noise — not a bench/lab environment. |
-| Low standby current | For any future low-power sleep mode with CAN wake. |
-| High ESD rating | Bus pins are exposed to the harness/connectors directly. |
 
 Four candidates compared, specs pulled directly from each manufacturer's
 datasheet (`Reference Docs/CAN Transceivers/`):
@@ -146,23 +144,22 @@ datasheet (`Reference Docs/CAN Transceivers/`):
 |---|---|---|---|---|
 | VCC / VIO | 4.5-5.5V / 1.7-5.5V | 4.5-5.5V / 3.3V or 5V | 4.5-5.5V / 2.91-5.5V | 4.5-5.5V / 1.8-5.5V |
 | Max data rate | 8 Mbps (CAN FD + SIC) | 2 Mbps (5 Mbps "G" suffix) | 5 Mbps (all but "T" variant) | 8 Mbps (CAN FD) |
-| Standby current | ~0.8µA typ | ~0.5µA typ | No true standby — "Silent mode" only, 0.1-1.2 **mA** | 5µA typ |
-| ESD (datasheet headline) | ±8kV (ISO10605 powered contact) | ±15kV IEC | ±8kV IEC 61000-4-2 | ±14kV IEC 61000-4-2 |
 | Bus fault tolerance | ±58V | ±58V (±70V "H" variant) | ±42V | Not confirmed |
 | AEC-Q100 | Grade 1, confirmed | Grade 1, confirmed | Qualified, confirmed | **Not in datasheet** — marketing language only |
 | Functional Safety docs | Yes | Yes | No | No |
-| Distinguishing feature | SIC — reduces ringing on multi-stub topologies | Best ESD, lowest standby, direct TI/BQ79616 precedent | — | — |
+| Distinguishing feature | SIC — reduces ringing on multi-stub topologies | Direct TI/BQ79616 precedent | — | — |
 
 ### Why TCAN1462V-Q1 over TCAN1042V-Q1
 
 Both are fully valid (same vendor, same AEC-Q100 grade, same Functional
-Safety documentation, similar standby current). TCAN1042V-Q1 has the better
-raw ESD figure; TCAN1462V-Q1 was chosen for **SIC** (Signal Improvement
-Capability) — actively reduces bus ringing in networks with multiple
-unterminated stubs, which fits a car harness with several CAN nodes
+Safety documentation). TCAN1462V-Q1 was chosen for **SIC** (Signal
+Improvement Capability) — actively reduces bus ringing in networks with
+multiple unterminated stubs, which fits a car harness with several CAN nodes
 (BMS-Master, ECU, dashboard) branching off rather than a clean daisy chain.
-TJA1057 was ruled out for lacking a true standby mode; MCP2562FD for lacking
-confirmed AEC-Q100 qualification.
+MCP2562FD was ruled out for lacking confirmed AEC-Q100 qualification.
+TJA1057 is AEC-Q100 qualified but has no Functional Safety documentation and
+no SIC — ruled out in favor of staying in the same TI ecosystem as the rest
+of the signal chain (BQ79600-Q1 → BQ79616 → TCAN1462V-Q1).
 
 ### Sources
 
