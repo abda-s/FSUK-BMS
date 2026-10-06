@@ -39,8 +39,8 @@ op-amps/PGAs, most ADCs, deepest CAN buffering.
 | 3 | SPI master for BQ79600-Q1 | Must | One SPI peripheral, plus `SPI_RDY` and `NFAULT` pins. |
 | 4 | Hardware FPU | Must | SoC estimation algorithms. |
 | 5 | RAM / Flash capacity | Must | Snapshot is ~420 B, plus limit tables, balancing state, fault latch, CAN queues. |
-| 6 | Fast multi-channel ADC | Must | Current sensor. |
-| 7 | Internal PGA / op-amp | Nice | Only matters for a raw analog shunt amp. A CAN-based or isolated Hall sensor makes this moot. |
+| 6 | Fast multi-channel ADC | Must | Reads the Hall-effect current sensor's analog voltage output. |
+| 7 | Internal PGA / op-amp | Not needed | Confirmed: Hall-effect sensor (voltage output), not a raw shunt. No amplification needed before the ADC. |
 | 8 | GPIO: 2 EXTI + relay, watchdog, opto outputs, switch input | Must | `SPI_RDY`, `NFAULT`, AMS relay, watchdog toggle, charger opto, balancing switch. |
 | 9 | Deep CAN buffering (non-blocking TX) | Should | Telemetry must never block the safety path (relay, fault latch, watchdog). |
 
@@ -89,15 +89,17 @@ is unconfirmed.
 
 ### Why G474 over the other passing candidates
 
-- F4 and H5/H7 families have no built-in op-amps — a raw shunt amp would need
-  an external chip.
+- G474 has the most ADCs of any candidate — reads the Hall-effect current
+  sensor with margin to spare.
 - F4 family CAN buffering is 3 TX mailboxes (needs a software TX queue to
   avoid blocking the safety path); G474's FDCAN has message RAM instead.
-- G474 has the most ADCs of any candidate.
 - H7 and the larger F4 parts (F429/F407, F413) pass everything too, but are
   bigger/pricier for no benefit here.
 - G473 = same silicon family, same analog block, same CAN count. Fallback
   only, not a second option.
+
+The built-in op-amps that several candidates lack (F4, H5, H7 families) are
+not a factor either way — confirmed not needed, see requirement 7 above.
 
 ### Package
 
