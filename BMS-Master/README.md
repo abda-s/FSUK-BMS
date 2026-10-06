@@ -111,6 +111,7 @@ LQFP64 — enough pins for everything above, with spares for SWD/debug.
 - `Reference Docs/STM32 MCU/` — STM32G474xB/xC/xE datasheet (DS12288)
 - `Reference Docs/BQ796xx BMS/` — BQ79600-Q1 datasheet and app notes
 - `Reference Docs/Open-Source BMS Projects/README.md` — real-world STM32 MCU precedent
+- `Reference Docs/Current Sensor/` — LEM DHAB S/124 datasheet (the Hall-effect current sensor referenced in requirements 6-7 above)
 
 ## CAN transceiver selection
 
