@@ -109,3 +109,63 @@ LQFP64 — enough pins for everything above, with spares for SWD/debug.
 - `Reference Docs/STM32 MCU/` — STM32G474xB/xC/xE datasheet (DS12288)
 - `Reference Docs/BQ796xx BMS/` — BQ79600-Q1 datasheet and app notes
 - `Reference Docs/Open-Source BMS Projects/README.md` — real-world STM32 MCU precedent
+
+## CAN transceiver selection: TCAN1462V-Q1
+
+Decision: **TCAN1462V-Q1** (SOIC-8, `TCAN1462VDRQ1`), on both CAN1 and CAN2.
+VIO tied to the 3.3V rail (same rail as the STM32) for direct 3.3V logic
+interfacing; VCC on the existing 5V rail.
+
+### Isolation: not required
+
+Checked against the actual rulebooks (`Reference Docs/FSUK Rules/`), not
+assumption. FSG rule **EV 4.3.1**: "The entire TS and LVS must be galvanically
+isolated" — this is a TS↔LVS boundary rule. Both CAN buses here are LVS-side
+only (STM32 ↔ ECU/dashboard), already downstream of the one isolation
+boundary that matters: the transformer-coupled daisy-chain link to the
+BQ79600-Q1. Searched both rulebooks fully for "isolat"/"galvanic" — every
+instance concerns the TS/LVS boundary (EV4.3.1) or component-level cases
+(EV5.6.3, AIRs), never CAN. Confirmed by checking `FSAE_LSU_BMS` (a real FSAE
+team's repo): their CAN nets are literally named `ISO_CAN1+/-`, but there's no
+isolator component anywhere in their schematics or BOM — the name doesn't
+mean what it implies.
+
+### Requirements and candidates
+
+| Requirement | Why |
+|---|---|
+| 3.3V logic (VIO) | Must interface directly with the STM32G474's 3.3V GPIO, no external level shifter. |
+| Automotive-grade (AEC-Q100) | Board sees vibration, heat near HV equipment, and electrical noise — not a bench/lab environment. |
+| Low standby current | For any future low-power sleep mode with CAN wake. |
+| High ESD rating | Bus pins are exposed to the harness/connectors directly. |
+
+Four candidates compared, specs pulled directly from each manufacturer's
+datasheet (`Reference Docs/CAN Transceivers/`):
+
+| | TCAN1462V-Q1 | TCAN1042V-Q1 | TJA1057 | MCP2562FD |
+|---|---|---|---|---|
+| VCC / VIO | 4.5-5.5V / 1.7-5.5V | 4.5-5.5V / 3.3V or 5V | 4.5-5.5V / 2.91-5.5V | 4.5-5.5V / 1.8-5.5V |
+| Max data rate | 8 Mbps (CAN FD + SIC) | 2 Mbps (5 Mbps "G" suffix) | 5 Mbps (all but "T" variant) | 8 Mbps (CAN FD) |
+| Standby current | ~0.8µA typ | ~0.5µA typ | No true standby — "Silent mode" only, 0.1-1.2 **mA** | 5µA typ |
+| ESD (datasheet headline) | ±8kV (ISO10605 powered contact) | ±15kV IEC | ±8kV IEC 61000-4-2 | ±14kV IEC 61000-4-2 |
+| Bus fault tolerance | ±58V | ±58V (±70V "H" variant) | ±42V | Not confirmed |
+| AEC-Q100 | Grade 1, confirmed | Grade 1, confirmed | Qualified, confirmed | **Not in datasheet** — marketing language only |
+| Functional Safety docs | Yes | Yes | No | No |
+| Distinguishing feature | SIC — reduces ringing on multi-stub topologies | Best ESD, lowest standby, direct TI/BQ79616 precedent | — | — |
+
+### Why TCAN1462V-Q1 over TCAN1042V-Q1
+
+Both are fully valid (same vendor, same AEC-Q100 grade, same Functional
+Safety documentation, similar standby current). TCAN1042V-Q1 has the better
+raw ESD figure; TCAN1462V-Q1 was chosen for **SIC** (Signal Improvement
+Capability) — actively reduces bus ringing in networks with multiple
+unterminated stubs, which fits a car harness with several CAN nodes
+(BMS-Master, ECU, dashboard) branching off rather than a clean daisy chain.
+TJA1057 was ruled out for lacking a true standby mode; MCP2562FD for lacking
+confirmed AEC-Q100 qualification.
+
+### Sources
+
+- `Reference Docs/CAN Transceivers/` — datasheets for all four candidates
+- `Reference Docs/FSUK Rules/` — FSUK and FSG rulebooks (isolation requirement check)
+- `Reference Docs/Open-Source BMS Projects/FSAE_LSU_BMS/` — real-world CAN wiring reference (and the `ISO_CAN` naming caveat above)
