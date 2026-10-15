@@ -179,3 +179,110 @@ because the SIC reasoning changed.
 - `Reference Docs/CAN Transceivers/` — datasheets for all four candidates
 - `Reference Docs/FSUK Rules/` — FSUK and FSG rulebooks (isolation requirement check)
 - `Reference Docs/Open-Source BMS Projects/FSAE_LSU_BMS/` — real-world CAN wiring reference (and the `ISO_CAN` naming caveat above)
+
+## Daisy-chain isolation transformer selection
+
+**Decision: Bourns SM91502ALE**, on both ends of every daisy-chain link: the
+BQ79600-Q1 side on this board and COMH/COML on every `BMS-Module`.
+
+On this board the transformer is the TS/LV isolation barrier: the BQ79600-Q1
+and STM32 are LV, and everything past the transformer is TS. Between modules
+it only isolates TS from TS (one module's voltage, ~67 V).
+
+### TI's validated list
+
+The BQ79616 datasheet points to SLVAEP4 (BQ79616-Q1 Daisy Chain
+Communications) for transformer parts. Table 5-1 lists the parts TI tested
+with the BQ7961x:
+
+| Part | Supplier | Inductance (OCL) | Height |
+|---|---|---|---|
+| HMU1228NL | Pulse | 150–370 µH | 6.85 mm |
+| HM2147NL | Pulse | 580–1285 µH | 3.45 mm |
+| SM91502AL | Bourns | 150–450 µH | 5.72 mm |
+
+TI's rules from the same section:
+
+1. Prefer parts in the **150–600 µH** range.
+2. Use the **same part number on both ends** of every link (COML of the upper
+   device and COMH of the lower one).
+3. Anything **off this list** needs your own system-level validation over
+   temperature, fast transactions and EMI.
+
+Only parts on this list were considered.
+
+### Rule check (max TS voltage 403 V)
+
+The FSG 2026 rules (used by FSUK) apply to the transformer on this board,
+because it is the TS/LV barrier:
+
+- **EV 1.2.1 — galvanic isolation.** The AC test voltage (RMS, 1 min) must be
+  above 3 × max TS voltage or 750 V, whichever is higher: **> 1209 Vrms**. The
+  barrier's working voltage, if specified, must be above max TS voltage:
+  **> 403 V**.
+- **EV 4.3.6 — TS and LV on the same PCB.** At 300–600 V: **3.0 mm clearance**,
+  and **20 mm creepage**, or **4.0 mm with conformal coating**.
+
+### Candidates compared
+
+All values from each part's datasheet in `Reference Docs/BMS Isolation Transformers/`.
+
+| | **SM91502AL** (Bourns) | HMU1228NL (Pulse) | HM2147NL (Pulse) |
+|---|---|---|---|
+| Inductance (OCL) | 150–450 µH | 150–370 µH | 500 µH min (TI: 580–1285 µH) |
+| Inside TI's 150–600 µH window | **Yes** | Yes | **No** |
+| Height | 5.72 mm | 6.85 mm | 3.45 mm |
+| Hipot, primary to secondary | 4300 VDC, 1 mA, 60 s | 4300 VDC, 60 s | 4300 Vrms, 60 s |
+| Working voltage | 1000 VDC | 1000 VDC | 1500 VDC |
+| Insulation grade | Functional | **Basic** | Functional |
+| Creepage / clearance (part) | Not stated | **10 mm / 7 mm** | >3 mm / not stated |
+| Operating temp | −40 to +125 °C | −40 to +125 °C | −40 to +125 °C |
+| AEC-Q200 | Yes | Not stated | Yes |
+| Built-in common-mode choke | Yes | Yes (1CT:1CT) | No |
+| TI reference design | — | TIDA-010271 | — |
+
+All three pass EV 1.2.1. The working voltage is above 403 V for all three.
+The hipot needs one line of explanation for the two VDC-rated parts: a
+4300 VDC test stresses the barrier to 4300 V peak, the same as a ~3040 Vrms AC
+test, which is well above the 1209 Vrms required.
+
+### Why SM91502AL
+
+- **Inside TI's preferred inductance range.** 150–450 µH sits in the middle of
+  the 150–600 µH window. HM2147NL is above it.
+- **AEC-Q200 compliant**, rated −40 to +125 °C.
+- **Lower than the HMU1228NL** (5.72 mm vs 6.85 mm). There are two transformers
+  on each of six module boards inside the TSAC.
+- **Common-mode choke built in**, so no separate choke is needed on the link.
+- **Second source with the same footprint:** the CND-tek CB0603S has the same
+  package dimensions and land pattern (check the pinout), 150–370 µH, 4300 VDC hipot, 1000 VDC working
+  voltage, and states >5 mm creepage. It is **not** on TI's list, so treat it
+  as a fallback that needs its own validation, not a drop-in.
+
+### Caveats
+
+- **Functional insulation, creepage not stated.** The SM91502AL datasheet
+  rates the construction as "Functional insulation" and gives no creepage or
+  clearance figure. EV 1.2.1 doesn't require a particular insulation grade,
+  but if the scrutineer or ESA wants a Basic-rated barrier with stated
+  spacing, the **HMU1228NL** (Basic, 10 mm creepage, TIDA-010271 precedent) is
+  the fallback. Raise this with the ESA before ordering.
+- **PCB spacing is a layout job.** On this board the two pad rows of the
+  transformer are the TS/LV boundary. Reading the recommended land pattern as
+  a 7.11 mm row pitch with 2.54 mm pads gives roughly **4.5 mm** between the
+  rows. Measure it on the real footprint in Altium. That would meet 4.0 mm
+  with conformal coating and the 3.0 mm clearance, but not 20 mm uncoated. **This board needs conformal coating**, or a slot under the
+  transformer. Mark the TS and LV areas on the silkscreen, as EV 4.3.6
+  requires.
+- **Same part on both ends.** With identical module boards this is automatic.
+  Note it on the schematic so nobody substitutes a different transformer on
+  one board later.
+- **Ordering code.** `SM91502ALE` = SM91502, A (AEC-Q200), L (Cu/Ni/Sn
+  termination), E (tape and reel, 800 pcs/reel).
+
+### Sources
+
+- `Reference Docs/BQ796xx BMS/Application Notes/BQ79616-Q1 Daisy Chain Communications (slvaep4).pdf` — Section 5.1, Table 5-1
+- `Reference Docs/BMS Isolation Transformers/` — datasheets for SM91502AL, HMU1228NL, the Pulse BM101 family (HM2147NL), and CND-tek CB0603S
+- `Reference Docs/BQ796xx BMS/TIDA-010271 Reference Design/` — uses HMU1228NL
+- `Reference Docs/FSUK Rules/FSG-Rules_2026_v1.1.pdf` — EV 1.2.1, EV 4.3.6 and Table 5
