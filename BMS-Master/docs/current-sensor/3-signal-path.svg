@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 210" font-family="Arial, Helvetica, sans-serif">
+  <title>Signal path: sensor output 0.25 to 4.75 V goes through a 12k/18k divider to 0.15 to 2.85 V at the STM32 ADC pin.</title>
+  <defs>
+    <marker id="arrS" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a1f24"/>
+    </marker>
+  </defs>
+  <rect width="760" height="210" fill="#ffffff"/>
+  <text x="20" y="30" font-size="11.5" fill="#59636d">one channel shown; channel 2 and the 5 V supply monitor use the same divider</text>
+  <rect x="20" y="50" width="140" height="80" fill="#e7f1fb" stroke="#1971c2" stroke-width="1.5"/>
+  <text x="90" y="84" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a1f24">DHAB ASIC</text>
+  <text x="90" y="103" text-anchor="middle" font-size="11.5" fill="#59636d">amplify + trim</text>
+  <line x1="160" y1="90" x2="255" y2="90" stroke="#1a1f24" stroke-width="1.5" marker-end="url(#arrS)"/>
+  <text x="207" y="80" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">0.25–4.75 V</text>
+  <text x="207" y="112" text-anchor="middle" font-size="11.5" fill="#59636d">harness</text>
+  <rect x="262" y="72" width="60" height="36" fill="none" stroke="#1a1f24" stroke-width="1.5"/>
+  <text x="292" y="95" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">12k</text>
+  <line x1="322" y1="90" x2="380" y2="90" stroke="#1a1f24" stroke-width="1.5"/>
+  <circle cx="380" cy="90" r="3" fill="#1a1f24"/>
+  <line x1="380" y1="90" x2="380" y2="118" stroke="#1a1f24" stroke-width="1.5"/>
+  <rect x="362" y="118" width="36" height="48" fill="none" stroke="#1a1f24" stroke-width="1.5"/>
+  <text x="380" y="147" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">18k</text>
+  <line x1="380" y1="166" x2="380" y2="186" stroke="#1a1f24" stroke-width="1.5"/>
+  <line x1="366" y1="186" x2="394" y2="186" stroke="#1a1f24" stroke-width="2"/>
+  <text x="410" y="190" font-size="11.5" fill="#59636d">GND (also pulls a broken wire to 0 V)</text>
+  <line x1="380" y1="90" x2="520" y2="90" stroke="#1a1f24" stroke-width="1.5" marker-end="url(#arrS)"/>
+  <text x="450" y="80" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">0.15–2.85 V</text>
+  <rect x="527" y="50" width="210" height="80" fill="#e7f1fb" stroke="#1971c2" stroke-width="1.5"/>
+  <text x="632" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a1f24">STM32G474 ADC</text>
+  <text x="632" y="99" text-anchor="middle" font-size="11.5" fill="#59636d">12-bit, 3.3 V reference</text>
+  <text x="632" y="116" text-anchor="middle" font-size="11.5" fill="#59636d">ch1 · ch2 · sensor supply</text>
+</svg>

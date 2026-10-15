@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" font-family="Arial, Helvetica, sans-serif">
+  <title>DHAB S/124 cross-section: the TS cable passes through a magnetic core; the field circles in the core and crosses an air gap where the Hall chip sits.</title>
+  <defs>
+    <marker id="arrF" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6741d9"/>
+    </marker>
+  </defs>
+  <rect width="760" height="360" fill="#ffffff"/>
+  <text x="40" y="40" font-size="11.5" fill="#59636d">section through the sensor</text>
+  <!-- core ring with gap at top -->
+  <path d="M 268 72 A 120 120 0 1 0 312 72" fill="none" stroke="#868e96" stroke-width="30"/>
+  <!-- field arrows -->
+  <path d="M 225 110 A 95 95 0 0 0 200 255" fill="none" stroke="#6741d9" stroke-width="2" marker-end="url(#arrF)"/>
+  <path d="M 240 300 A 95 95 0 0 0 360 300" fill="none" stroke="#6741d9" stroke-width="2" marker-end="url(#arrF)"/>
+  <path d="M 380 255 A 95 95 0 0 0 355 110" fill="none" stroke="#6741d9" stroke-width="2" marker-end="url(#arrF)"/>
+  <line x1="314" y1="62" x2="270" y2="62" stroke="#6741d9" stroke-width="2" marker-end="url(#arrF)"/>
+  <line x1="314" y1="80" x2="270" y2="80" stroke="#6741d9" stroke-width="2" marker-end="url(#arrF)"/>
+  <!-- hall chip -->
+  <rect x="282" y="56" width="16" height="30" fill="#1971c2"/>
+  <!-- cable: jacket + copper -->
+  <circle cx="290" cy="192" r="40" fill="#fff0e6" stroke="#d9480f" stroke-width="1.5"/>
+  <circle cx="290" cy="192" r="29" fill="#d9480f"/>
+  <circle cx="290" cy="192" r="7" fill="#ffffff"/>
+  <circle cx="290" cy="192" r="2.6" fill="#d9480f"/>
+  <!-- labels -->
+  <line x1="330" y1="192" x2="470" y2="192" stroke="#59636d" stroke-width="1"/>
+  <text x="478" y="188" font-size="13" fill="#1a1f24"><tspan font-weight="bold">TS cable</tspan>, Ø 18 mm, cut end-on</text>
+  <text x="478" y="206" font-size="11.5" fill="#59636d">pack current, dot = flowing toward you</text>
+  <line x1="298" y1="70" x2="470" y2="70" stroke="#59636d" stroke-width="1"/>
+  <text x="478" y="66" font-size="13" fill="#1a1f24"><tspan font-weight="bold">Hall chip</tspan> in the air gap</text>
+  <text x="478" y="84" font-size="11.5" fill="#59636d">low-voltage electronics side</text>
+  <line x1="396" y1="250" x2="470" y2="270" stroke="#59636d" stroke-width="1"/>
+  <text x="478" y="266" font-size="13" fill="#1a1f24" font-weight="bold">Magnetic core</text>
+  <text x="478" y="284" font-size="11.5" fill="#59636d">ch1: FeNi alloy · ch2: FeSi alloy</text>
+  <text x="478" y="318" font-size="13" fill="#1a1f24"><tspan fill="#6741d9" font-weight="bold">Field</tspan> follows the core and crosses the gap</text>
+</svg>

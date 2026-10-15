@@ -286,3 +286,202 @@ test, which is well above the 1209 Vrms required.
 - `Reference Docs/BMS Isolation Transformers/` — datasheets for SM91502AL, HMU1228NL, the Pulse BM101 family (HM2147NL), and CND-tek CB0603S
 - `Reference Docs/BQ796xx BMS/TIDA-010271 Reference Design/` — uses HMU1228NL
 - `Reference Docs/FSUK Rules/FSG-Rules_2026_v1.1.pdf` — EV 1.2.1, EV 4.3.6 and Table 5
+
+## Current sensor selection
+
+**Decision: LEM DHAB S/124** (dual-channel open-loop Hall, analog output),
+around the 18 mm orange TS cable inside the TSAC. **Pending:** FSUK's written
+confirmation of the isolation argument below, before the Master layout is
+frozen.
+
+### What the rules require
+
+| Rule | Requirement | Consequence |
+|---|---|---|
+| EV 5.8.2 | Full AMS inside the TSAC | Sensor and Master both inside the TSAC |
+| EV 5.8.3 | AMS continuously measures TS current | This sensor |
+| EV 5.8.10 | Open SDC if current exceeds a critical value for > 500 ms, accounting for accuracy and noise | Trip threshold includes the sensor error margin |
+| EV 5.8.13, T 11.9 | AMS signals are System Critical Signals: open circuit, short to GND, short to supply and implausible values must give a safe state | Firmware fault checks, see below |
+| EV 5.8.14 | Each monitored value's fault must be triggerable at inspection | Unplugging the sensor connector trips the AMS |
+| EV 2.2.1 / 2.2.2 | Max 80 kW, max 500 A at the TSAC outlet | ~200 A at 403 V full pack, ~330 A at 240 V empty, 500 A peak |
+| T 11.6.9 | BSPD and its sensors outside the TSAC | The BSPD needs its own current sensor; it cannot share this one |
+| EV 1.2.1 | Anything crossing TS/LV is an isolation barrier | See isolation section |
+
+### How it works
+
+1. **Current makes a magnetic field.** The pack current in the cable creates
+   a field circling it, proportional to the current.
+2. **A core collects the field into a gap.** A magnetic ring around the cable
+   gathers the field. All of it has to cross one small air gap, so the field
+   in the gap is strong and proportional to the current
+   (B<sub>gap</sub> ≈ μ₀·I / g).
+
+   ![Cross-section: cable through the magnetic core, Hall chip in the air gap](docs/current-sensor/1-core-and-gap.svg)
+
+   There are two cores side by side, one per channel. Channel 1 (FeNi core,
+   ±75 A) gives fine resolution near zero. Channel 2 (FeSi core, ±500 A)
+   covers full power.
+
+3. **The Hall chip turns field into voltage.** A small constant current flows
+   through a thin semiconductor plate. The field pushes the charges to one
+   edge, creating a voltage across the plate proportional to the field, so
+   to the cable current.
+
+   ![Hall effect: bias current through a plate, field into the page, charges pushed to one edge](docs/current-sensor/2-hall-effect.svg)
+
+4. **The ASIC amplifies and trims it** to a ratiometric output: 2.5 V at 0 A,
+   moving up or down with current, always clamped between 0.25 V and 4.75 V
+   while the sensor works.
+
+```
+Uout = (UC / 5) · (S · IP + 2.5)      ⇒      IP = (5 · Uout / UC − 2.5) / S
+```
+
+| Channel | Range | Sensitivity S | Output at full range | Used for |
+|---|---|---|---|---|
+| 1 (FeNi) | ±75 A | 26.7 mV/A | 0.50 / 4.50 V | Low current, charging, SoC |
+| 2 (FeSi) | ±500 A | 4 mV/A | 0.50 / 4.50 V | Full power, overcurrent trip |
+
+Supply 5 V ±5% (20 mA max), bandwidth 70 Hz, load ≥ 10 kΩ and ≤ 100 nF,
+connector TE 1-1456426-5 (A = 5 V, B = high range, C = GND, D = low range).
+
+### Interface to the Master
+
+Each output goes through a 12 kΩ / 18 kΩ divider (×0.6) to an STM32 ADC pin.
+The sensor's 5 V supply is measured on a third channel with the same divider,
+because the output is ratiometric.
+
+![Signal path from the DHAB output through the divider to the STM32 ADC](docs/current-sensor/3-signal-path.svg)
+
+- 4.75 V max → 2.85 V at the pin; a short to 5 V → 3.0 V, so the two are distinguishable.
+- The 18 kΩ bottom resistor pulls a broken wire to 0 V, which the range check catches.
+- 30 kΩ total load, above the 10 kΩ minimum.
+- Resolution: ~0.05 A/LSB on channel 1, ~0.34 A/LSB on channel 2, finer than the sensor error.
+
+### Fault detection (T 11.9)
+
+At startup the AIRs are open, so the true current is 0 A. The firmware checks
+the supply, checks both channels are in range, checks both read ~0 A, and
+stores the offset. Only then does the AMS report OK.
+
+Every sample (~1 kHz) while running:
+
+```mermaid
+flowchart LR
+    A[Supply 4.75–5.25 V?] -->|yes| B[Ch1 and ch2 in 0.2–4.8 V?]
+    B -->|yes| C[Compute current, subtract startup offset]
+    C --> D{"|I| below 70 A on ch2?"}
+    D -->|yes| E[Ch1 and ch2 agree within ~20 A?]
+    D -->|no| F[Use ch2]
+    E -->|yes| G[Use ch1]
+    G --> H{"|I| above trip limit?"}
+    F --> H
+    H -->|no| OK[OK]
+    A -->|no| X[FAULT]
+    B -->|no| X
+    E -->|no| X
+    H -->|yes| X
+    X --> T[Persists ~100 ms → open SDC, latch]
+```
+
+The channel is chosen from channel 2's reading because above ~84 A channel 1
+sits at its 4.75 V clamp, which still looks valid.
+
+| Failure | What the ADC sees | Caught by |
+|---|---|---|
+| Signal wire broken | 0 V (pull-down) | Range check |
+| Signal short to GND | 0 V | Range check |
+| Signal short to 5 V | 5.0 V | Range check |
+| Sensor supply lost | 0 V, supply monitor low | Supply + range check |
+| Sensor GND broken | Probably high | Range check, **to be confirmed on the bench** |
+| Stuck at a valid value | In range | Startup zero check, ch1/ch2 plausibility |
+| Connector unplugged | 0 V on both | Range check (this is the inspection test) |
+
+### Accuracy
+
+Worst-case total error from the datasheet:
+
+| | −40 °C | 25 °C | 125 °C |
+|---|---|---|---|
+| Ch1 at 0 A | ±0.35 A | ±0.15 A | ±0.35 A |
+| Ch1 at ±75 A | ±2.50 A | ±1.30 A | ±2.50 A |
+| Ch2 at 0 A | ±1.80 A | ±1.00 A | ±1.80 A |
+| Ch2 at ±500 A | ±15.0 A | ±9.0 A | ±15.0 A |
+
+The overcurrent trip is set to the cell limit minus channel 2's error
+(e.g. 450 A cell limit → 435 A trip), so a sensor reading low can never hide
+a real overcurrent (EV 5.8.10).
+
+### Isolation (EV 1.2.1)
+
+The copper is at TS voltage; the Hall chip and its wires are LV. Under a
+single insulation fault the cable can sit the full 403 V from LV ground. There
+are two barriers in series between them:
+
+![Two isolation barriers in series: cable insulation, then the sensor housing](docs/current-sensor/4-isolation-barriers.svg)
+
+| EV 1.2.1 (max TS 403 V) | Sensor housing alone | Orange cable insulation |
+|---|---|---|
+| Insulation resistance ≥ 500 Ω/V (≥ 0.2 MΩ) | 500 MΩ at 500 V ✅ | Not in datasheet, measure with a megger |
+| Test voltage > 3 × 403 = 1209 V, 1 min | 2.5 kV ✅ | 2500 V ✅ |
+| Working voltage, if stated, > 403 V | **UL 300 V ❌** | 600 V nominal ✅ |
+
+The sensor housing on its own fails on paper: its UL 508 rating is 300 V, and
+scrutineers check this line per component (FSCZ 2025 EV inspection sheet,
+items 34–35). With a bare busbar this would rule the DHAB out. With an
+insulated cable, the argument is that **the 600 V-rated cable insulation is
+the isolation barrier and the sensor never touches TS potential**; the housing
+is a second layer. This is our interpretation, so it needs FSUK's written
+confirmation.
+
+The cable is Jainson NBR rubber welding cable, orange (`Reference Docs/TS
+Cable/`): 600 V nominal, 2500 V test, −30 to +90 °C, which also meets EV 4.5.2
+(insulation rated for max TS voltage) and EV 4.5.3 (≥ 85 °C). The datasheet
+doesn't say whether 600 V is AC or DC.
+
+### Mounting
+
+The sensor hole is Ø 22.5 mm with one flat side 21.55 mm across; the cable
+measures 18 mm. Fill the ~2 mm gap with a sleeve or split grommet so the cable
+stays centred, and clamp the cable on both sides (EV 4.3.5; an open-loop
+sensor's reading shifts slightly if the conductor moves in the hole).
+
+### Alternatives considered
+
+| | DHAB S/124 | LEM CAB 500-C/SP5 | LEM CAB-SF 500-C/SP1 | Isabellenhütte IVT-S | Amphenol HCSO-1WD 75/500 |
+|---|---|---|---|---|---|
+| Voltage rating | UL 300 V | UL 600 V | Not stated | 1000 V basic (IEC 60664) | Not stated |
+| Insulation test | 2.5 kV | 2.5 kV | 2.5 kV | — | Not stated |
+| Creepage | 3.1 mm | 7.2 mm | 7.2 mm | — | 3.95 mm |
+| Output | Analog, 2 ch | CAN | CAN + CRC + counter, ASIL B | CAN | Analog, 2 ch |
+| Supply | 5 V | 12 V | 12 V | 12/24 V | 5 V |
+
+The CAN sensors avoid the 300 V question entirely but change the Master
+design (third CAN bus instead of ADC inputs, CAN timeout/CRC checks instead of
+range checks). They are the fallback if FSUK rejects the cable-insulation
+argument. The HCSO-1W is electrically almost identical to the DHAB but its
+datasheet gives no insulation figures at all.
+
+### Open items
+
+1. Read the cable type from its jacket printing: 18 mm matches both the
+   double-insulated NBR/NBR 70 mm² (18.7 mm) and the single NBR 95 mm²
+   (18.2 mm). Needed for EV 4.5.5 anyway.
+2. Ask FSUK (rules Q&A) to confirm the cable insulation as the barrier for
+   the DHAB S/124, naming the cable as welding cable.
+3. Megger the cable-through-sensor assembly at 500/1000 V DC, and hipot it
+   above 1209 Vrms (or ~1710 V DC) for 60 s, copper to all four sensor pins.
+   Results and photos go in the ESF.
+4. Bench calibration with N turns of wire through the hole (N × I looks like
+   N × the current), both channels, both directions.
+5. Fault-injection test for every row of the fault table, recording that the
+   AMS opens the SDC in under 500 ms (T 11.9.7).
+
+### Sources
+
+- `Reference Docs/Current Sensor/` — DHAB S/124 (v5), CAB-SF 500-C/SP1, HCSO-1W datasheets
+- `Reference Docs/TS Cable/Jainson NBR Welding Cable Datasheet.pdf`
+- `Reference Docs/FSUK Rules/` — FSG 2026 v1.1 (EV 1.2.1, EV 2.2, EV 4.3.5, EV 4.5, EV 5.8, T 11.6, T 11.9) and FSUK 2026 supplementary
+- [LEM CAB 500-C/SPx datasheet v4](https://www.lem.com/sites/default/files/products_datasheets/cab_500-c_spx_public_datasheet_v4.pdf), [Isabellenhütte IVT-S datasheet](https://www.isabellenhuette.com/hubfs/Files/Data-sheets/IVT-S.pdf?hsLang=en)
+- [FS Czech 2025 EV inspection sheet](https://fsczech.cz/wp-content/uploads/2025/07/FSCZ25_InspectionSheet_EV.pdf) — isolation barrier checks
+- [FSN 2022 accumulator inspection checklist](https://www.formula-student.nl/wp-content/uploads/2022/07/FSN-2022-Scrutineering-System-Accu-Inspection-Master.pdf) — current sensor disconnect test

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 290" font-family="Arial, Helvetica, sans-serif">
+  <title>Hall plate: bias current flows left to right, the gap field points into the page, charges are pushed to the top edge, and the Hall voltage appears between the edges.</title>
+  <defs>
+    <marker id="arrL" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1971c2"/>
+    </marker>
+    <g id="into">
+      <circle r="9" fill="none" stroke="#6741d9" stroke-width="1.8"/>
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#6741d9" stroke-width="1.8"/>
+      <line x1="-6" y1="6" x2="6" y2="-6" stroke="#6741d9" stroke-width="1.8"/>
+    </g>
+  </defs>
+  <rect width="760" height="290" fill="#ffffff"/>
+  <rect x="190" y="80" width="300" height="140" fill="#e7f1fb" stroke="#1971c2" stroke-width="1.5"/>
+  <use href="#into" x="240" y="120"/><use href="#into" x="340" y="120"/><use href="#into" x="440" y="120"/>
+  <use href="#into" x="240" y="180"/><use href="#into" x="340" y="180"/><use href="#into" x="440" y="180"/>
+  <line x1="110" y1="150" x2="185" y2="150" stroke="#1971c2" stroke-width="2.5" marker-end="url(#arrL)"/>
+  <line x1="495" y1="150" x2="570" y2="150" stroke="#1971c2" stroke-width="2.5" marker-end="url(#arrL)"/>
+  <text x="96" y="140" font-size="13" fill="#1a1f24">bias current I<tspan font-size="9" dy="3">H</tspan></text>
+  <path d="M 200 150 C 280 150, 320 120, 470 98" fill="none" stroke="#1971c2" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="210" y="98" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">+ + + + + + + + + + + + +</text>
+  <text x="210" y="214" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">− − − − − − − − − − − − −</text>
+  <line x1="610" y1="80" x2="610" y2="220" stroke="#1a1f24" stroke-width="1.5"/>
+  <line x1="490" y1="80" x2="610" y2="80" stroke="#1a1f24" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="490" y1="220" x2="610" y2="220" stroke="#1a1f24" stroke-width="1" stroke-dasharray="3 3"/>
+  <circle cx="610" cy="150" r="24" fill="#ffffff" stroke="#1a1f24" stroke-width="1.5"/>
+  <text x="610" y="155" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a1f24">V<tspan font-size="9" dy="3">H</tspan></text>
+  <text x="645" y="146" font-size="13" fill="#1a1f24">Hall</text>
+  <text x="645" y="162" font-size="13" fill="#1a1f24">voltage</text>
+  <text x="190" y="250" font-size="11.5" fill="#59636d"><tspan fill="#6741d9">⊗ gap field B, into the page</tspan> · charges pushed toward the top edge</text>
+</svg>

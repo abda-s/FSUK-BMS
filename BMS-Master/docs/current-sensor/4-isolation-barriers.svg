@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" font-family="Arial, Helvetica, sans-serif">
+  <title>Two isolation barriers in series between the TS copper and the LV sensor electronics: the 600 V-rated cable insulation, then the sensor housing with 3.1 mm creepage.</title>
+  <rect width="760" height="300" fill="#ffffff"/>
+  <!-- cable -->
+  <text x="36" y="141" font-size="11.5" fill="#59636d">barrier 1: cable insulation, Jainson NBR, 600 V nominal / 2500 V test</text>
+  <rect x="20" y="146" width="720" height="52" rx="6" fill="#fff0e6" stroke="#d9480f" stroke-width="1.5"/>
+  <rect x="20" y="160" width="720" height="24" fill="#d9480f"/>
+  <text x="36" y="177" font-size="13" font-weight="bold" fill="#ffffff">COPPER · TS · up to 403 V from LV ground</text>
+  <text x="585" y="215" font-size="11.5" fill="#59636d">Ø 18 mm cable</text>
+  <!-- housing -->
+  <rect x="250" y="60" width="260" height="170" fill="none" stroke="#1a1f24" stroke-width="2"/>
+  <text x="380" y="52" text-anchor="middle" font-size="11.5" fill="#59636d">PBT-GF30 plastic housing</text>
+  <rect x="300" y="78" width="160" height="40" fill="#e7f1fb" stroke="#1971c2" stroke-width="1.5"/>
+  <text x="380" y="103" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a1f24">Hall chip + ASIC · LV</text>
+  <line x1="470" y1="118" x2="470" y2="146" stroke="#1a1f24" stroke-width="1"/>
+  <line x1="464" y1="118" x2="476" y2="118" stroke="#1a1f24" stroke-width="1"/>
+  <line x1="464" y1="146" x2="476" y2="146" stroke="#1a1f24" stroke-width="1"/>
+  <text x="482" y="126" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">barrier 2: 3.1 mm</text>
+  <text x="482" y="140" font-size="11.5" fill="#59636d">sensor housing creepage</text>
+  <line x1="380" y1="78" x2="380" y2="20" stroke="#1971c2" stroke-width="2"/>
+  <text x="390" y="30" font-size="13" fill="#1a1f24">to Master board (LV)</text>
+  <!-- ratings -->
+  <text x="560" y="240" font-size="13" font-weight="bold" fill="#1a1f24">Sensor datasheet</text>
+  <text x="560" y="256" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">2.5 kV, 1 min ✓</text>
+  <text x="560" y="272" font-size="12" font-family="Consolas, monospace" fill="#1a1f24">500 MΩ @ 500 V ✓</text>
+  <text x="560" y="288" font-size="12" font-family="Consolas, monospace" fill="#c92a2a">UL: 300 V ✗ (need ≥ 403)</text>
+  <text x="40" y="240" font-size="11.5" fill="#59636d">Under a single insulation fault (e.g. TS+ touching chassis),</text>
+  <text x="40" y="256" font-size="11.5" fill="#59636d">the TS− cable sits the full 403 V away from LV ground.</text>
+</svg>
