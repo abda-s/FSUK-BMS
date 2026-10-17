@@ -36,22 +36,34 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
 - [x] `Current_Sense.SchDoc`: DHAB S/124 dividers and supply monitor, harness
 - [x] `Top.SchDoc`: sheet harnesses connected
 - [x] `Charger.SchDoc`: isolated charger STOP signal (opto), see [Charger interface](#charger-interface)
+- [x] `AMS_SDC.SchDoc`: `AMS_OK` 12 V output to the SDC board, see [AMS_OK signal](#ams_ok-signal-to-the-sdc)
+- [x] `Top.SchDoc`: `AMS_SDC` sheet symbol synced, `AMS_OK_MCU` and `CHG_EN` wired to `MCU_STM32.SchDoc`
+- [x] Charger opto PC817B checked against EV 1.2.1: passes, kept (see [Charger interface](#charger-interface))
+- [x] Transformer marked "same part on both ends" on the schematic
 
 ### To do
 
 Schematic:
 
-- [ ] `Power.SchDoc`: LV input, 5 V and 3.3 V rails (sheet is still empty)
-- [ ] `Connectors.SchDoc`: LV, CAN, sensor, SDC and debug connectors (sheet is still empty)
-- [ ] `AMS_OK` 12 V output driver, see [AMS_OK signal](#ams_ok-signal-to-the-sdc)
-- [ ] Pull-down on the SDC driver input, so an MCU reset (floating pins) opens the SDC
-- External watchdog: **next PCB version (v2)**. v1 uses the STM32 IWDG only. Candidate: TI TPS3431SDRBR (LCSC C702145), 200 ms timeout, WDO to NRST and AND-gated with `AMS_OK`. Datasheet in `Reference Docs/Watchdog/`.
+- [ ] `Power.SchDoc`: LV input, `+12V`, 5 V and 3.3 V rails (sheet is still empty; `+12V` feeds `AMS_SDC.SchDoc`)
+- [ ] `Connectors.SchDoc`: LV, CAN, sensor, SDC (`AMS_OK`), Reg Bus RJ12 and debug connectors (sheet is still empty)
+- [ ] `MCU_STM32.SchDoc`: pick GPIOs for `AMS_OK_MCU` and `CHG_EN`, add the ports
 - [ ] Order the RJ12 (6P6C) Reg Bus jack online: not available locally
 - [ ] Balancing switch input
 - [ ] SWD debug header
 - [ ] Resolve the notes on `Stack_Interface.SchDoc`: second COM port for v1, 0 Ω resistors, cap packages
-- [ ] Mark the transformer as "same part on both ends" on the schematic
 - [ ] Verify CAN, ADC and memory specs in CubeMX/datasheet before ordering
+
+SDC team (ask before freezing the schematic):
+
+- [ ] Pull-down on their `AMS_OK` input, so a broken wire reads as a fault
+- [ ] `AMS_OK` is used with the charger too: make sure it reaches the charging SDC through the connector used while charging
+
+Next PCB version (v2):
+
+- External watchdog: TI TPS3431SDRBR (LCSC C702145), 200 ms timeout, WDO to NRST and AND-gated with `AMS_OK`. Datasheet in `Reference Docs/Watchdog/`. v1 uses the STM32 IWDG only.
+- SDC readback input (BMS sees whether the SDC is closed)
+- Heartbeat `AMS_OK` (toggling signal, so a stuck pin can't hold the SDC closed)
 
 PCB:
 
@@ -75,7 +87,7 @@ Isolation transformer:
 Firmware:
 
 - [ ] BQ79600-Q1 SPI driver and stack readout
-- [ ] Limit checks, fault latch and AMS relay control
+- [ ] Limit checks, fault latch, `AMS_OK_MCU` and `CHG_EN` control (both default low until checks pass)
 - [ ] IWDG in hardware mode (option byte `IWDG_SW = 0`), ~100–200 ms timeout, kicked only from the main loop
 - [ ] Current sensor startup zero check and per-sample fault checks
 - [ ] SoC estimation
@@ -324,10 +336,26 @@ test, which is well above the 1209 Vrms required.
 
 - **Functional insulation, creepage not stated.** The SM91502AL datasheet
   rates the construction as "Functional insulation" and gives no creepage or
-  clearance figure. EV 1.2.1 doesn't require a particular insulation grade,
-  but if the scrutineer or ESA wants a Basic-rated barrier with stated
-  spacing, the **HMU1228NL** (Basic, 10 mm creepage, TIDA-010271 precedent) is
-  the fallback. Raise this with the ESA before ordering.
+  clearance figure.
+
+  | Grade | What it means |
+  |---|---|
+  | **Functional** | Only enough insulation for the circuit to work. Not designed or certified to protect people from shock. |
+  | **Basic** | Certified as one level of protection against shock. |
+  | Supplementary / Reinforced | Stronger, for double protection. |
+
+  On this board the transformer is the TS/LV barrier. EV 1.2.1 doesn't ask
+  for a grade, only test voltage > 1209 Vrms, working voltage > 403 V and
+  insulation ≥ 0.2 MΩ, and the SM91502AL passes all three on paper. The risk
+  is a scrutineer refusing a TS/LV barrier labelled "Functional".
+
+  **Action before ordering:** ask the competition's electrical officials (the
+  ESA here means FSUK's electrical scrutineers, via the rules Q&A; not our
+  ESO) whether a Functional-rated transformer that meets EV 1.2.1 is accepted.
+  If not, or to avoid the risk, switch to the **Pulse HMU1228NL**: Basic,
+  10 mm creepage stated, used in TI's TIDA-010271. Downsides: taller (6.85 mm
+  vs 5.72 mm), and it must be the same part on both ends, so the module boards
+  change too.
 - **PCB spacing is a layout job.** On this board the two pad rows of the
   transformer are the TS/LV boundary. Reading the recommended land pattern as
   a 7.11 mm row pitch with 2.54 mm pads gives roughly **4.5 mm** between the
@@ -557,6 +585,8 @@ The BMS stops the Manzanita Micro PFC charger through the Reg Bus BLACK line
 - **330R:** about 6 mA LED. The output needs 0.5 mA (5 V / 10k), PC817 CTR ≥ 50 %, so about 5× margin.
 - **RJ12:** 1 `+5V_REGBUS`, 2 `REGBUS_STOP`, 4 `GND_REGBUS`. 3, 5, 6 unused.
 - **Part:** we don't have an RJ12 (6P6C) jack locally, it has to be ordered online.
+- **Opto isolation (EV 1.2.1, max TS 403 V):** the PC817B is the TS/LV barrier. Test voltage 5000 Vrms > 1209 Vrms ✅, working voltage V_IORM 630 V peak > 403 V ✅, insulation 5×10¹⁰ Ω > 0.2 MΩ ✅. While charging the Reg Bus side also swings to the mains peak (230 V + 10 % ≈ 360 V peak), still < 630 V. A reinforced opto is not required.
+- **PCB (EV 4.3.6, 300–600 V):** 3.0 mm clearance and 20 mm creepage, or 4.0 mm with conformal coating. No opto package gives 20 mm, so coat it or slot under it, like the transformer. Check the gap across the SMD-4 (LS10.3) footprint is ≥ 4 mm.
 
 This is the soft stop. The hard stop is the AMS opening the charging shutdown circuit (EV 7.2).
 
@@ -566,26 +596,11 @@ Sources: `Reference Docs/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiri
 
 The SDC board (another team member) holds the AMS latch, reset and relay.
 The BMS only sends one signal, `AMS_OK`: **12 V = OK, 0 V = open the SDC**.
-The same signal is used for the charging SDC (EV 7.2).
+`AMS_OK` is also used with the charger: the same signal opens the charging SDC (EV 7.2), so the AMS stops charging the same way it stops driving. It works alongside the Reg Bus soft stop on `Charger.SchDoc` (`CHG_EN`).
 
-```
-+12V ───────────────┬─────────┐
-                  [10k]       │ S
-                    │         Q2  P-MOSFET (AO3401A)
-                    ├─────────┤ G
-                  [10k]       │ D
-                    │         └──[PTC 100mA]──┬──► AMS_OK (12 V, to SDC relay coil)
-                    │                         │
-                    │                       1N4148W (cathode to AMS_OK)
-                    │                         │
-                    │                        GND
-                    │ D
-AMS_OK_MCU ─[1k]── Q1  N-MOSFET (AO3400A)
-               │    │ S
-            [100k]  GND
-               │
-              GND
-```
+![AMS_OK driver schematic (AMS_SDC.SchDoc)](docs/ams-ok/ams-ok-driver.png)
+
+Q1 = AO3400A (level shift), Q2 = AO3401A (12 V high-side switch), F = 100 mA PTC.
 
 | Case | Result |
 |---|---|
@@ -628,11 +643,8 @@ Inputs: STM32G474 V_OH ≥ V_DD − 0.4 = **2.9 V** up to **8 mA** (DS12288 Tabl
 - Power-up glitch through C_rss as the 12 V rail ramps: 100k × 50 pF × 12 V/1 ms = **60 mV**.
 - **100k chosen:** wastes only 3.3 V / 101k = 33 µA when on.
 
-**Output: PTC fuse + flyback diode, no series resistor.** `AMS_OK` drives the SDC board's relay coil directly: Omron G5Q-14-DC12, 360 Ω, 33.3 mA, must operate ≤ 9 V (75 %), must release ≥ 0.6 V. A 1k series resistor would leave the coil only 12 × 360 / 1360 = 3.2 V, so it would never pull in.
-- **Fuse:** Littelfuse 1206L010/60WR (LCSC C2153714), 100 mA hold, 250 mA trip, 60 V, 1.5 Ω (10 Ω max after a trip). Coil gets 12 − 33.3 mA × 10 Ω = **11.7 V** worst case. If `AMS_OK` also drives a second coil (~66 mA), go one size up: PTC hold current drops with temperature.
-- **Flyback diode:** 1N4148W (LCSC C81598), AMS_OK to GND, cathode on AMS_OK, after the fuse. Clamps the coil kickback at turn-off so Q2 doesn't take it.
+**Output: PTC fuse, no series resistor.** `AMS_OK` may drive the SDC board's relay coil directly (to confirm with the SDC team): Omron G5Q-14-DC12, 360 Ω, 33.3 mA, must operate ≤ 9 V (75 %), must release ≥ 0.6 V. A 1k series resistor would leave the coil only 12 × 360 / 1360 = 3.2 V, so it would never pull in.- **Fuse:** Littelfuse 1206L010/60WR (LCSC C2153714), 100 mA hold, 250 mA trip, 60 V, 1.5 Ω (10 Ω max after a trip). Coil gets 12 − 33.3 mA × 10 Ω = **11.7 V** worst case. If `AMS_OK` also drives a second coil (~66 mA), go one size up: PTC hold current drops with temperature.
 - During a short Q2 carries a few amps for milliseconds until the PTC trips (AO3401A pulsed rating ~27 A); check the PTC trip-time curve.
-- The TE RT2 bistable relay must **not** be driven by `AMS_OK`: a bistable relay stays closed when de-energized (EV 6.1.7). Confirm with the SDC team.
 
 **To ask the SDC team:** a pull-down on their `AMS_OK` input, so a broken wire reads as a fault.
 
