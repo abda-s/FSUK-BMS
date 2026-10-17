@@ -21,6 +21,64 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
 - Drives the **isolated charger regulation bus** (opto STOP signal).
 - Watched by an **external watchdog** that opens the relay if the MCU hangs.
 
+## Progress
+
+### Done
+
+- [x] MCU selected: STM32G474, LQFP64 (see [MCU selection](#mcu-selection-stm32g474))
+- [x] CAN transceiver selected: TCAN1042V-Q1 for v1 (see [CAN transceiver selection](#can-transceiver-selection))
+- [x] Daisy-chain transformer selected: Bourns SM91502ALE (see [transformer selection](#daisy-chain-isolation-transformer-selection))
+- [x] Current sensor selected: LEM DHAB S/124 (see [current sensor selection](#current-sensor-selection))
+- [x] `MCU_STM32.SchDoc`: power and config pins
+- [x] `CAN.SchDoc`: CAN1 and CAN2 transceivers, harness
+- [x] `Stack_Interface.SchDoc`: BQ79600-Q1 and isolation transformer, harness
+- [x] `Current_Sense.SchDoc`: DHAB S/124 dividers and supply monitor, harness
+- [x] `Top.SchDoc`: sheet harnesses connected
+- [x] `Charger.SchDoc`: isolated charger STOP signal (opto), see [Charger interface](#charger-interface)
+
+### To do
+
+Schematic:
+
+- [ ] `Power.SchDoc`: LV input, 5 V and 3.3 V rails (sheet is still empty)
+- [ ] `Connectors.SchDoc`: LV, CAN, sensor, SDC and debug connectors (sheet is still empty)
+- [ ] AMS fault relay driver (SDC)
+- [ ] External watchdog
+- [ ] Order the RJ12 (6P6C) Reg Bus jack online: not available locally
+- [ ] Balancing switch input
+- [ ] SWD debug header
+- [ ] Resolve the notes on `Stack_Interface.SchDoc`: second COM port for v1, 0 Ω resistors, cap packages
+- [ ] Mark the transformer as "same part on both ends" on the schematic
+- [ ] Verify CAN, ADC and memory specs in CubeMX/datasheet before ordering
+
+PCB:
+
+- [ ] Create the PCB document and layout
+- [ ] TS/LV spacing at the transformer: measure on the real footprint, plan conformal coating or a slot
+- [ ] Mark TS and LV areas on the silkscreen (EV 4.3.6)
+- [ ] Check LCSC stock for SOIC-8 `TCAN1462VDRQ1` before v2
+
+Current sensor (see [Open items](#open-items)):
+
+- [ ] Read the TS cable type from its jacket printing
+- [ ] Get FSUK's written confirmation of the cable-insulation argument (before freezing the layout)
+- [ ] Megger and hipot the cable-through-sensor assembly
+- [ ] Bench calibration, both channels, both directions
+- [ ] Fault-injection test for every row of the fault table, SDC opens in under 500 ms
+
+Isolation transformer:
+
+- [ ] Ask the ESA whether a Functional-insulation barrier (SM91502AL) is accepted, or switch to HMU1228NL
+
+Firmware:
+
+- [ ] BQ79600-Q1 SPI driver and stack readout
+- [ ] Limit checks, fault latch and AMS relay control
+- [ ] Current sensor startup zero check and per-sample fault checks
+- [ ] SoC estimation
+- [ ] Balancing control
+- [ ] CAN1 telemetry and CAN2 summary messages
+
 ## MCU selection: STM32G474
 
 Decision: **STM32G474** (fallback **STM32G473**, pin/feature-compatible — only
@@ -485,3 +543,18 @@ datasheet gives no insulation figures at all.
 - [LEM CAB 500-C/SPx datasheet v4](https://www.lem.com/sites/default/files/products_datasheets/cab_500-c_spx_public_datasheet_v4.pdf), [Isabellenhütte IVT-S datasheet](https://www.isabellenhuette.com/hubfs/Files/Data-sheets/IVT-S.pdf?hsLang=en)
 - [FS Czech 2025 EV inspection sheet](https://fsczech.cz/wp-content/uploads/2025/07/FSCZ25_InspectionSheet_EV.pdf) — isolation barrier checks
 - [FSN 2022 accumulator inspection checklist](https://www.formula-student.nl/wp-content/uploads/2022/07/FSN-2022-Scrutineering-System-Accu-Inspection-Master.pdf) — current sensor disconnect test
+
+## Charger interface
+
+The BMS stops the Manzanita Micro PFC charger through the Reg Bus BLACK line
+(`Charger.SchDoc`): +5 V on BLACK = charger stops, near 0 V = charger runs.
+
+- **Fail-safe:** `CHG_EN` high = charger runs. `CHG_EN` low, MCU reset or BMS off = BLACK pulled to 5 V by the 10k = charger stops.
+- **HV:** the charger is not isolated, so `+5V_REGBUS`, `GND_REGBUS` and `REGBUS_STOP` sit at mains + pack potential. Never tie `GND_REGBUS` to `GND`.
+- **330R:** about 6 mA LED. The output needs 0.5 mA (5 V / 10k), PC817 CTR ≥ 50 %, so about 5× margin.
+- **RJ12:** 1 `+5V_REGBUS`, 2 `REGBUS_STOP`, 4 `GND_REGBUS`. 3, 5, 6 unused.
+- **Part:** we don't have an RJ12 (6P6C) jack locally, it has to be ordered online.
+
+This is the soft stop. The hard stop is the AMS opening the charging shutdown circuit (EV 7.2).
+
+Sources: `Reference Docs/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiring), `Reference Docs/PC817 Datasheet.pdf`
