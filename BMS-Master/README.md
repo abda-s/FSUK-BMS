@@ -13,8 +13,9 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
   reading the daisy-chained cell-monitor stack.
 - Reads the accumulator **current sensor**.
 - Runs **limit checks, SoC estimation, balancing control, fault latch**.
-- Drives the **AMS fault relay** directly (not via CAN/ECU) — opens the SDC
-  on fault, in both driving and charging states.
+- Drives the **`AMS_OK` signal** (12 V) directly (not via CAN/ECU) to the SDC
+  board, which holds the latch and relay. Low opens the SDC, in both driving
+  and charging states.
 - **CAN1**: full telemetry (96 cells, 192 temps, balancing state, I, V).
   **CAN2**: summarized state (SoC, max cell V, max temp, fault code) to
   ECU/dashboard.
@@ -42,8 +43,9 @@ Schematic:
 
 - [ ] `Power.SchDoc`: LV input, 5 V and 3.3 V rails (sheet is still empty)
 - [ ] `Connectors.SchDoc`: LV, CAN, sensor, SDC and debug connectors (sheet is still empty)
-- [ ] AMS fault relay driver (SDC)
-- [ ] External watchdog
+- [ ] `AMS_OK` 12 V output driver, see [AMS_OK signal](#ams_ok-signal-to-the-sdc)
+- [ ] Pull-down on the SDC driver input, so an MCU reset (floating pins) opens the SDC
+- External watchdog: **next PCB version (v2)**. v1 uses the STM32 IWDG only. Candidate: TI TPS3431SDRBR (LCSC C702145), 200 ms timeout, WDO to NRST and AND-gated with `AMS_OK`. Datasheet in `Reference Docs/Watchdog/`.
 - [ ] Order the RJ12 (6P6C) Reg Bus jack online: not available locally
 - [ ] Balancing switch input
 - [ ] SWD debug header
@@ -74,6 +76,7 @@ Firmware:
 
 - [ ] BQ79600-Q1 SPI driver and stack readout
 - [ ] Limit checks, fault latch and AMS relay control
+- [ ] IWDG in hardware mode (option byte `IWDG_SW = 0`), ~100–200 ms timeout, kicked only from the main loop
 - [ ] Current sensor startup zero check and per-sample fault checks
 - [ ] SoC estimation
 - [ ] Balancing control
@@ -558,3 +561,90 @@ The BMS stops the Manzanita Micro PFC charger through the Reg Bus BLACK line
 This is the soft stop. The hard stop is the AMS opening the charging shutdown circuit (EV 7.2).
 
 Sources: `Reference Docs/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiring), `Reference Docs/PC817 Datasheet.pdf`
+
+## AMS_OK signal to the SDC
+
+The SDC board (another team member) holds the AMS latch, reset and relay.
+The BMS only sends one signal, `AMS_OK`: **12 V = OK, 0 V = open the SDC**.
+The same signal is used for the charging SDC (EV 7.2).
+
+```
++12V ───────────────┬─────────┐
+                  [10k]       │ S
+                    │         Q2  P-MOSFET (AO3401A)
+                    ├─────────┤ G
+                  [10k]       │ D
+                    │         └──[PTC 100mA]──┬──► AMS_OK (12 V, to SDC relay coil)
+                    │                         │
+                    │                       1N4148W (cathode to AMS_OK)
+                    │                         │
+                    │                        GND
+                    │ D
+AMS_OK_MCU ─[1k]── Q1  N-MOSFET (AO3400A)
+               │    │ S
+            [100k]  GND
+               │
+              GND
+```
+
+| Case | Result |
+|---|---|
+| MCU says OK | Q1 on, Q2 on, `AMS_OK` = 12 V |
+| MCU says fault, MCU reset, BMS unpowered | 100k holds Q1 off, Q2 off, 0 V = SDC opens |
+| Wire broken | SDC board pull-down reads 0 V = SDC opens |
+| Short to GND | 0 V = SDC opens, PTC fuse trips and resets after |
+
+**Why two MOSFETs:** a MOSFET switches on gate minus source (V_GS).
+- One P-MOSFET: its source is at 12 V, so a 3.3 V pin can never pull the gate high enough to turn it off.
+- One N-MOSFET on top: its gate would need to be above 12 V + threshold, which needs a charge pump.
+- One N-MOSFET to GND: a short to GND would read as OK, which T 11.9 forbids.
+
+Q1 is just a level shifter for Q2. The two 10k split the gate drive to about −6 V, inside the AO3401A's ±12 V limit.
+
+### Parts
+
+| | Part | LCSC | Key specs |
+|---|---|---|---|
+| Q1 | AO3400A (N, AOS) | C20917 | V_GS(th) 0.65 / 1.05 / 1.45 V, C_iss 630 pF, C_rss 50 pF, I_GSS ±100 nA, V_GS ±12 V |
+| Q2 | AO3401A (P, AOS) | C15127 (alt. UMW C347476) | V_GS(th) −0.5 to −1.3 V, V_GS ±12 V, V_DS −30 V |
+
+C15127 is marked "not recommended for new designs" on LCSC; the UMW AO3401A is the second source.
+
+The AO3400A replaced the 2N7002: the 2N7002's 2.5 V max threshold left only ~0.37 V of margin at a 3.3 V pin.
+
+### Resistor values
+
+Inputs: STM32G474 V_OH ≥ V_DD − 0.4 = **2.9 V** up to **8 mA** (DS12288 Table 55), floating pin leakage **±150 nA** (Table 54). Q1 sinks the Q2 divider: 12 V / 20k = **0.6 mA**, so Q1 needs V_G ≥ V_GS(th)max + 0.2 V = **1.65 V**.
+
+**Gate resistor R_G (Q1 gate):**
+- Min, protect the pin: the gate looks like a short at each edge (and permanently if Q1 fails gate-source short). R_G ≥ 3.3 V / 8 mA = **412 Ω**.
+- Max, Q1 must still turn on through the R_G / R_PD divider: 2.9 × 100k / (100k + R_G) ≥ 1.65 V → R_G ≤ **75 kΩ**.
+- Speed is not a limit: 1k × 630 pF = 0.63 µs against the 500 ms rule.
+- **1k chosen:** peak 2.9 mA (< 8 mA), V_G = 2.9 × 100/101 = **2.87 V**, 1.4 V above the worst-case threshold.
+
+**Pull-down R_PD (Q1 gate to GND)**, holds Q1 off while the pin floats (MCU reset, before init, MCU unpowered):
+- Max, leakage must not lift the gate: (150 nA pin + 100 nA gate) × 100k = **25 mV**, far below V_GS(th)min 0.65 V.
+- Min, must not steal the gate drive: R_PD ≥ 1k × 1.65 / (2.9 − 1.65) = **1.3 kΩ**.
+- Power-up glitch through C_rss as the 12 V rail ramps: 100k × 50 pF × 12 V/1 ms = **60 mV**.
+- **100k chosen:** wastes only 3.3 V / 101k = 33 µA when on.
+
+**Output: PTC fuse + flyback diode, no series resistor.** `AMS_OK` drives the SDC board's relay coil directly: Omron G5Q-14-DC12, 360 Ω, 33.3 mA, must operate ≤ 9 V (75 %), must release ≥ 0.6 V. A 1k series resistor would leave the coil only 12 × 360 / 1360 = 3.2 V, so it would never pull in.
+- **Fuse:** Littelfuse 1206L010/60WR (LCSC C2153714), 100 mA hold, 250 mA trip, 60 V, 1.5 Ω (10 Ω max after a trip). Coil gets 12 − 33.3 mA × 10 Ω = **11.7 V** worst case. If `AMS_OK` also drives a second coil (~66 mA), go one size up: PTC hold current drops with temperature.
+- **Flyback diode:** 1N4148W (LCSC C81598), AMS_OK to GND, cathode on AMS_OK, after the fuse. Clamps the coil kickback at turn-off so Q2 doesn't take it.
+- During a short Q2 carries a few amps for milliseconds until the PTC trips (AO3401A pulsed rating ~27 A); check the PTC trip-time curve.
+- The TE RT2 bistable relay must **not** be driven by `AMS_OK`: a bistable relay stays closed when de-energized (EV 6.1.7). Confirm with the SDC team.
+
+**To ask the SDC team:** a pull-down on their `AMS_OK` input, so a broken wire reads as a fault.
+
+**v2:** SDC readback input, heartbeat `AMS_OK`, external watchdog.
+
+Sources (`Reference Docs/AMS_OK Driver/`):
+- onsemi AND9093, Using MOSFETs in Load Switch Applications: Fig. 3 is this circuit (P-channel switch, small NMOS level shift)
+- TI SLVAES1A: a high-side N-channel MOSFET needs a bootstrap or charge pump
+- AO3401A datasheet: V_GS max ±12 V, V_GS(th) −0.5 to −1.3 V
+- AO3400A datasheet: V_GS(th) 0.65–1.45 V, C_iss 630 pF, C_rss 50 pF, I_GSS ±100 nA
+- 2N7002 datasheets (Diodes Inc, Hongjiacheng): V_GS(th) up to 2.5 V, why it was replaced
+- STM32G474 datasheet DS12288, Tables 54–55 (`Reference Docs/STM32 MCU/`)
+- Omron G5Q datasheet (coil table) and TE RT2 bistable datasheet: the SDC board relays
+- Littelfuse 1206L010/60WR: [LCSC C2153714](https://www.lcsc.com/product-detail/C2153714.html)
+- FSG Rules 2026 v1.1, T 11.9 (`Reference Docs/FSUK Rules/`)
