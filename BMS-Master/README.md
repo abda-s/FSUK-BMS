@@ -40,6 +40,7 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
 - [x] `Top.SchDoc`: `AMS_SDC` sheet symbol synced, `AMS_OK_MCU` and `CHG_EN` wired to `MCU_STM32.SchDoc`
 - [x] Charger opto PC817B checked against EV 1.2.1: passes, kept (see [Charger interface](#charger-interface))
 - [x] Transformer marked "same part on both ends" on the schematic
+- [x] Balancing master switch on `MCU_STM32.SchDoc`, see [Balancing switch](#balancing-switch)
 
 ### To do
 
@@ -47,9 +48,8 @@ Schematic:
 
 - [ ] `Power.SchDoc`: LV input, `+12V`, 5 V and 3.3 V rails (sheet is still empty; `+12V` feeds `AMS_SDC.SchDoc`)
 - [ ] `Connectors.SchDoc`: LV, CAN, sensor, SDC (`AMS_OK`), Reg Bus RJ12 and debug connectors (sheet is still empty)
-- [ ] `MCU_STM32.SchDoc`: pick GPIOs for `AMS_OK_MCU` and `CHG_EN`, add the ports
+- [ ] `MCU_STM32.SchDoc`: pick GPIOs for `AMS_OK_MCU`, `CHG_EN` and `BAL_EN_N`, add the ports / labels on the STM32 pins
 - [ ] Order the RJ12 (6P6C) Reg Bus jack online: not available locally
-- [ ] Balancing switch input
 - [ ] SWD debug header
 - [ ] Resolve the notes on `Stack_Interface.SchDoc`: second COM port for v1, 0 Ω resistors, cap packages
 - [ ] Verify CAN, ADC and memory specs in CubeMX/datasheet before ordering
@@ -91,7 +91,7 @@ Firmware:
 - [ ] IWDG in hardware mode (option byte `IWDG_SW = 0`), ~100–200 ms timeout, kicked only from the main loop
 - [ ] Current sensor startup zero check and per-sample fault checks
 - [ ] SoC estimation
-- [ ] Balancing control
+- [ ] Balancing control (only while `BAL_EN_N` reads low, debounced, and the conditions in [Balancing switch](#balancing-switch) pass)
 - [ ] CAN1 telemetry and CAN2 summary messages
 
 ## MCU selection: STM32G474
@@ -660,3 +660,35 @@ Sources (`Reference Docs/AMS_OK Driver/`):
 - Omron G5Q datasheet (coil table) and TE RT2 bistable datasheet: the SDC board relays
 - Littelfuse 1206L010/60WR: [LCSC C2153714](https://www.lcsc.com/product-detail/C2153714.html)
 - FSG Rules 2026 v1.1, T 11.9 (`Reference Docs/FSUK Rules/`)
+
+## Balancing switch
+
+A slide switch on the board that can force balancing off. It is a
+**force-off override only**: switching it on never starts balancing by itself.
+Balancing runs only when all of these are true:
+
+- switch on (`BAL_EN_N` low)
+- no fault, temperatures OK
+- max cell > 3.9 V and spread > 20 mV
+- not driving
+
+Balancing works with the charger unplugged and stops when the spread closes.
+
+### Circuit (`MCU_STM32.SchDoc`)
+
+| Part | Connection | Why |
+|---|---|---|
+| ALPS SSSS811101 (LCSC C109335) | pin 2 (common) and tabs 4–7 to GND, pin 3 to `BAL_EN_N`, pin 1 unused | SMD right-angle slide switch, SPDT. Only reachable with the box open, so it can't be knocked by accident. |
+| 10k pull-up | +3V3 to `BAL_EN_N` | Holds the line high (balancing off) when the switch is off, during MCU reset (no internal pull-up yet) and if a joint fails. |
+| 100 nF | `BAL_EN_N` to GND | With the 10k, ~1 ms filter against contact bounce and noise. |
+
+- **Active low:** switch on connects `BAL_EN_N` to GND = balancing allowed.
+  Anything that goes wrong reads high = balancing off, the safe direction.
+- **10k vs the switch's minimum load:** the switch needs at least 50 µA at
+  3 V to switch reliably. 3.3 V / 10k = 330 µA. Keep the pull-up below ~66k.
+- **Ratings:** 0.3 A / 5 V DC max, 50 µA / 3 V DC min, −40 to +85 °C.
+- **PCB:** the land pattern has two ø0.9 mm locating holes; make sure the
+  footprint has them.
+- **Firmware:** read `BAL_EN_N` a few times before acting (debounce).
+
+Source: `Reference Docs/Balancing Switch/ALPS SSSS811101 Datasheet.pdf`
