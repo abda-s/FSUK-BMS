@@ -1,0 +1,13 @@
+﻿Part,Manufacturer,Part Number,Quantity,Price ($),Footprint (mm²),Description
+Cin,Taiyo Yuden,MSAST21GBB5106MTNA01,1,0.03995,6.75,Cap: 10 µF  Total Derated Cap: 1.7 µF  VDC: 25 V  ESR: 5.46 mΩ  Package: 0805  
+Cboot,TDK,C0603X5R1A104K030BC,1,0.01189,2.08,Cap: 100 nF  Total Derated Cap: 100 nF  VDC: 10 V  ESR: 70 mΩ  Package: 0201  
+Css,MuRata,GRM155R71A333KA01D,1,0.01,3,Cap: 33 nF  Total Derated Cap: 33 nF  VDC: 10 V  ESR: 1 mΩ  Package: 0402  
+Cinx,AVX,06033C104KAT2A,1,0.01,4.68,Cap: 100 nF  Total Derated Cap: 100 nF  VDC: 25 V  ESR: 50 mΩ  Package: 0603  
+Cout,MuRata,GRM32ER61C476KE15L,1,0.17,14.7,Cap: 47 µF  Total Derated Cap: 28 µF  VDC: 16 V  ESR: 3.04 mΩ  Package: 1210  
+U1,Texas Instruments,TPS62933FDRLR,1,0.482,8.64,
+L1,NIC Components,NPI52P7R8MTRF,1,0.5413,444.63,L: 7.8 µH  DCR: 18 mΩ  IDC: 7.5 A  
+Cff,MuRata,GRM1555C1E6R8CA01D,1,0.01,3,Cap: 6.8 pF  Total Derated Cap: 6.8 pF  VDC: 25 V  ESR: 1 mΩ  Package: 0402  
+Rfbb,Vishay-Dale,CRCW040210K0FKED,1,0.01,3,Resistance: 10 kΩ  Tolerance: 1.0%  Power: 63 mW  
+Rfbt,Vishay-Dale,CRCW040264K9FKED,1,0.01,3,Resistance: 64.9 kΩ  Tolerance: 1.0%  Power: 63 mW  
+Rent,Vishay-Dale,CRCW04021M18FKED,1,0.01,3,Resistance: 1.18 MΩ  Tolerance: 1.0%  Power: 63 mW  
+Renb,Vishay-Dale,CRCW0402169KFKED,1,0.01,3,Resistance: 169 kΩ  Tolerance: 1.0%  Power: 63 mW  

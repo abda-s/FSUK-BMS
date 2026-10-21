@@ -1,0 +1,70 @@
+(ExpressProject "TPS62933_TRANS"
+  (ProjectVersion "19981106")
+  (SoftwareVersion "17.4-2019 S024 (3998392)  [12/6/2021]-[09/28/22]")
+  (ProjectType "Analog or A/D Mixed Mode")
+  (Folder "Design Resources"
+    (Folder "Library"
+      (File ".\tps62933fdrl_trans.olb"
+        (Type "Schematic Library")))
+    ("Allegro Netlist Directory" "allegro")
+    (DOCKED "TRUE")
+    (DOCKING_POSITION "59420")
+    (NoModify)
+    (File ".\tps62933f_trans.DSN"
+      (Type "Schematic Design")
+      (DisplayName ".\tps62933f_trans.DSN"))
+    (BuildFileAddedOrDeleted "x")
+    (CompileFileAddedOrDeleted "x")
+    (Display_Online_DRC_Results "FALSE")
+    (RootChangedForceReNetlist "x")
+    (PSPICE_Regenerate_Netlist_Flag "FALSE"))
+  (Folder "Layout")
+  (Folder "Outputs")
+  (Folder "PSpice Resources"
+    (Folder "Simulation Profiles"
+      (File.PSpice.{09528990-3187-11D2-BC7B-00A0C90CBF91}
+         ".\tps62933f_trans-pspicefiles\steady_state\trans.sim"
+        (DisplayName "STEADY_STATE-TRANS")
+        (Type "PSpice Profile"))
+      (File.PSpice.{09528990-3187-11D2-BC7B-00A0C90CBF91}
+         ".\tps62933f_trans-pspicefiles\startup\trans.sim"
+        (DisplayName "STARTUP-TRANS")
+        (Type "PSpice Profile"))
+      (ActiveProfile ".\tps62933f_trans-pspicefiles\startup\trans.sim"))
+    (Folder "Model Libraries"
+      (Sort User)
+      (File ".\tps62933f_trans.lib"
+        (Type "PSpiceLibrary")))
+    (Folder "Stimulus Files"
+      (Sort User))
+    (Folder "Include Files"
+      (Sort User)))
+  (DefaultLibraryBrowseDirectory "library\PSpice")
+  (Folder "Logs")
+  (PartMRUSelector
+    (TPS62933FDRL_TRANS
+      (FullPartName "TPS62933FDRL_TRANS.Normal")
+      (LibraryName
+         "C:\BSR_PROJECTS\PART_NUMBERS\TPS62933F\RELEASE_FOLDER\TPS62933F_PSPICE_TRANS\TPS62933FDRL_TRANS.OLB")
+      (DeviceIndex "0"))
+    (VDC
+      (FullPartName "VDC.Normal")
+      (LibraryName
+         "C:\CADENCE\SPB_16.2\TOOLS\CAPTURE\LIBRARY\PSPICE\SOURCE.OLB")
+      (DeviceIndex "0"))
+    (TPS62933DRL_TRANS
+      (FullPartName "TPS62933DRL_TRANS.Normal")
+      (LibraryName
+         "C:\PART NUMBER\TPS62933\TPS62933_PSPICE_TRANS\TPS62933DRL_TRANS.OLB")
+      (DeviceIndex "0")))
+  (GlobalState
+    (FileView
+      (Path "Design Resources"))
+    (HierarchyView)
+    (Doc
+      (Type "COrCapturePMDoc")
+      (Frame
+        (Placement "44 0 1 -1 -1 -1 -1 0 200 0 516"))
+      (Tab 0)))
+  (ISPCBBASICLICENSE "false")
+  (MPSSessionName "x0252215"))

@@ -1,0 +1,44 @@
+﻿Name,Value,Category,Description
+Vout,6 V,System Information,Operational Output Voltage
+IC Tolerance,16 mV,IC,IC Feedback Tolerance
+Cin IRMS,514.85 mA,Capacitor,Input capacitor RMS ripple current
+Cin Pd,1.45 mW,Capacitor,Input capacitor power dissipation
+Cout IRMS,277.89 mA,Capacitor,Output capacitor RMS ripple current
+Cout Pd,234.53 µW,Capacitor,Output capacitor power dissipation
+L Ipp,962.64 mA,Inductor,Peak-to-peak inductor ripple current
+L Pd,19.39 mW,Inductor,Inductor power dissipation
+Ipp percentage,96.26%,Inductor,Inductor ripple current percentage (with respect to average inductor current)
+Duty Cycle,38.04%,System Information,Duty cycle
+Efficiency,95.5%,System Information,Steady state efficiency
+Frequency,500 kHz,System Information,Switching frequency
+IC Tj,100.7 °C,IC,IC junction temperature
+IC Pd,260.63 mW,IC,IC power dissipation
+Pout,6 W,System Information,Total output power
+Iin Avg,392.64 mA,IC,Average input current
+IC Ipk,1.48 A,IC,Peak switch current in IC
+Mode,FCCM,System Information,Conduction Mode
+Vout p-p,8.92 mV,System Information,Peak-to-peak output ripple voltage
+Vin p-p,283.24 mV,System Information,Peak-to-peak input voltage
+Phase Marg,52.11 °,System Information,Bode Plot Phase Margin
+Cross Freq,36.8 kHz,System Information,Bode plot crossover frequency
+Low Freq Gain,100.6 dB,System Information,Gain at 1Hz
+Gain Marg,-23.11 dB,System Information,Bode Plot Gain Margin
+ICThetaJA Effective,60.25 °C/W,IC,Effective IC Junction-to-Ambient Thermal Resistance
+Vout Ripple requirement used for Cout calculations,1.00%,System Information,Custom maximum output ripple requirement that was used for Cout selection(% of Vout).
+Overshoot Value,5.84 mV,System Information,Theoretical Vout Overshoot Value
+Undershoot Value,25.98 mV,System Information,Theoretical Vout Undershoot Value
+Vout transient requirement used for Cout calculations,3.00%,System Information,Custom Transient voltage change requirement that was used for Cout selection (% of Vout).
+Iout transient step used for Cout calculations,500 mA,System Information,Custom Transient current step requirement that was used for Cout selection (A).
+Inductor ripple current requirement used for Inductor selection,40.00%,System Information,Custom Inductor ripple current (% of average inductor current) requirement used for Inductor selection
+FootPrint,499 mm²,System Information,Total Foot Print Area of BOM components
+Vout Actual,5.99 V,System Information,Vout Actual calculated based on selected voltage divider resistors
+Vout Tolerance,3.79%,System Information,Vout Tolerance based on IC Tolerance (no load) and voltage divider resistors if applicable
+Vin,16 V,System Information,Vin operating point
+Iout,1 A,System Information,Iout operating point
+Cin Pd,1.45 mW,Power,Input capacitor power dissipation
+Cout Pd,234.53 µW,Power,Output capacitor power dissipation
+L Pd,19.39 mW,Power,Inductor power dissipation
+IC Pd,260.63 mW,Power,IC power dissipation
+Total BOM,$1.32,System Information,Total BOM Cost
+Total Pd,282.2 mW,Power,Total Power Dissipation
+BOM Count,12 ,System Information,Total Design BOM count
