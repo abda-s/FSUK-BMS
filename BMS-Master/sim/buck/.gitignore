@@ -1,0 +1,7 @@
+# LTspice outputs (regenerate by running buck_startup.asc)
+*.raw
+*.db
+*.net
+*.op.raw
+charts/buck_startup_data.csv
+charts/index.html

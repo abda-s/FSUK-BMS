@@ -41,12 +41,18 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
 - [x] Charger opto PC817B checked against EV 1.2.1: passes, kept (see [Charger interface](#charger-interface))
 - [x] Transformer marked "same part on both ends" on the schematic
 - [x] Balancing master switch on `MCU_STM32.SchDoc`, see [Balancing switch](#balancing-switch)
+- [x] Power budget, see [Power budget](#power-budget)
+- [x] Buck selected and designed: TPS62933F, 6 V 1 A, LCSC BOM; start-up simulated in LTspice, see [Buck converter](#buck-converter-tps62933f)
 
 ### To do
 
 Schematic:
 
-- [ ] `Power.SchDoc`: LV input, `+12V`, 5 V and 3.3 V rails (sheet is still empty; `+12V` feeds `AMS_SDC.SchDoc`)
+- [ ] `Power.SchDoc`: LV input, `+12V`, buck to ~6 V (≥ 0.5 A), `+5V` LDO (≥ 300 mA) and `+3V3` LDO (≥ 150 mA) from the buck, see [Power budget](#power-budget)
+- [ ] `Power.SchDoc`: draw the TPS62933F buck from the [BOM table](#design)
+- [ ] Pick the `+5V` and `+3V3` LDOs (800 mA rating, dropout ≤ 0.5 V)
+- [ ] LV input stage: reverse-polarity protection, fuse rating, TVS (SMBJ16A), power while charging
+- [ ] Buck sims still to run: load step, 9 V / 16 V input, hot-plug (see [Simulation](#simulation-ltspice))
 - [ ] `Connectors.SchDoc`: LV, CAN, sensor, SDC (`AMS_OK`), Reg Bus RJ12 and debug connectors (sheet is still empty)
 - [ ] `MCU_STM32.SchDoc`: pick GPIOs for `AMS_OK_MCU`, `CHG_EN` and `BAL_EN_N`, add the ports / labels on the STM32 pins
 - [ ] Order the RJ12 (6P6C) Reg Bus jack online: not available locally
@@ -56,7 +62,7 @@ Schematic:
 
 SDC team (ask before freezing the schematic):
 
-- [ ] Pull-down on their `AMS_OK` input, so a broken wire reads as a fault
+- [ ] Send the [`AMS_OK` interface values](#interface-to-the-sdc-board) (12 V = OK, 10k–100k pull-down, ~6 V threshold, 16 V tolerant)
 - [ ] `AMS_OK` is used with the charger too: make sure it reaches the charging SDC through the connector used while charging
 
 Next PCB version (v2):
@@ -590,24 +596,25 @@ The BMS stops the Manzanita Micro PFC charger through the Reg Bus BLACK line
 
 This is the soft stop. The hard stop is the AMS opening the charging shutdown circuit (EV 7.2).
 
-Sources: `Reference Docs/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiring), `Reference Docs/PC817 Datasheet.pdf`
+Sources: `Reference Docs/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiring), `Reference Docs/Optocouplers/PC817 Datasheet.pdf`
 
 ## AMS_OK signal to the SDC
 
-The SDC board (another team member) holds the AMS latch, reset and relay.
-The BMS only sends one signal, `AMS_OK`: **12 V = OK, 0 V = open the SDC**.
+The SDC board (another team member) holds the AMS latch, reset and relays.
+The BMS only sends one signal, `AMS_OK`, into a logic/comparator input on
+that board: **12 V = OK, 0 V = open the SDC**.
 `AMS_OK` is also used with the charger: the same signal opens the charging SDC (EV 7.2), so the AMS stops charging the same way it stops driving. It works alongside the Reg Bus soft stop on `Charger.SchDoc` (`CHG_EN`).
 
 ![AMS_OK driver schematic (AMS_SDC.SchDoc)](docs/ams-ok/ams-ok-driver.png)
 
-Q1 = AO3400A (level shift), Q2 = AO3401A (12 V high-side switch), F = 100 mA PTC.
+Q1 = AO3400A (level shift), Q2 = AO3401A (12 V high-side switch), 2K2 = output short-circuit limit.
 
 | Case | Result |
 |---|---|
 | MCU says OK | Q1 on, Q2 on, `AMS_OK` = 12 V |
 | MCU says fault, MCU reset, BMS unpowered | 100k holds Q1 off, Q2 off, 0 V = SDC opens |
 | Wire broken | SDC board pull-down reads 0 V = SDC opens |
-| Short to GND | 0 V = SDC opens, PTC fuse trips and resets after |
+| Short to GND | 0 V = SDC opens, 2K2 limits the current to 5.5 mA |
 
 **Why two MOSFETs:** a MOSFET switches on gate minus source (V_GS).
 - One P-MOSFET: its source is at 12 V, so a 3.3 V pin can never pull the gate high enough to turn it off.
@@ -643,10 +650,37 @@ Inputs: STM32G474 V_OH ≥ V_DD − 0.4 = **2.9 V** up to **8 mA** (DS12288 Tabl
 - Power-up glitch through C_rss as the 12 V rail ramps: 100k × 50 pF × 12 V/1 ms = **60 mV**.
 - **100k chosen:** wastes only 3.3 V / 101k = 33 µA when on.
 
-**Output: PTC fuse, no series resistor.** `AMS_OK` may drive the SDC board's relay coil directly (to confirm with the SDC team): Omron G5Q-14-DC12, 360 Ω, 33.3 mA, must operate ≤ 9 V (75 %), must release ≥ 0.6 V. A 1k series resistor would leave the coil only 12 × 360 / 1360 = 3.2 V, so it would never pull in.- **Fuse:** Littelfuse 1206L010/60WR (LCSC C2153714), 100 mA hold, 250 mA trip, 60 V, 1.5 Ω (10 Ω max after a trip). Coil gets 12 − 33.3 mA × 10 Ω = **11.7 V** worst case. If `AMS_OK` also drives a second coil (~66 mA), go one size up: PTC hold current drops with temperature.
-- During a short Q2 carries a few amps for milliseconds until the PTC trips (AO3401A pulsed rating ~27 A); check the PTC trip-time curve.
+**Output resistor 2K2 (0805, UNI-ROYAL 0805W8F2201T5E, LCSC C17520).**
+`AMS_OK` leaves the board on a cable. If that wire touches GND or the chassis,
+nothing else limits the current through Q2. A resistor limits it at once (a
+PTC would let amps through until it trips).
+- Max, the SDC input must still see "high": with their worst-case 10k
+  pull-down and LV sagging to 11 V, 11 × 10k / (10k + R) ≥ 8 V → R ≤ **3.7k**.
+- Min, the resistor must survive a short: it takes the full LV voltage,
+  P = V² / R. Keep it near half of the 0805's 125 mW: 12² / R ≤ 62.5 mW →
+  R ≥ **2.3k** (1.15k at the full rating).
+- **2K2 chosen:** short = 5.5 mA / 65 mW (94 mW at 14.4 V while charging).
+  Normal = 9.8 V at a 10k pull-down, 11.7 V at 100k. 0603 (0.1 W) is too
+  small for 94 mW.
 
-**To ask the SDC team:** a pull-down on their `AMS_OK` input, so a broken wire reads as a fault.
+### Interface to the SDC board
+
+Values agreed with the SDC team (their input takes anything from 3 to 12 V):
+
+| Item | Value |
+|---|---|
+| Signal | `AMS_OK`, one wire, for the driving SDC and the charging SDC |
+| OK | High, LV supply level (12 V nominal, ≥ 9.8 V at their input) |
+| Fault | Low, 0 V |
+| Their input | Pull-down to GND, 10k–100k, so a broken wire or a dead BMS reads 0 V = fault |
+| Their threshold | ~6 V |
+| Their input must tolerate | Up to 16 V (LV battery while charging). It feeds 5 V logic, so a divider or comparator in front |
+| Their latch | Trips on `AMS_OK` going low |
+
+All four failures give a fault on their side: BMS says fault, BMS dead or
+reset, broken wire, short to GND. Their first design used "high = fault" with
+a pull-up; that can't detect a short to GND (T 11.9), which is why the
+polarity is high = OK.
 
 **v2:** SDC readback input, heartbeat `AMS_OK`, external watchdog.
 
@@ -657,8 +691,7 @@ Sources (`Reference Docs/AMS_OK Driver/`):
 - AO3400A datasheet: V_GS(th) 0.65–1.45 V, C_iss 630 pF, C_rss 50 pF, I_GSS ±100 nA
 - 2N7002 datasheets (Diodes Inc, Hongjiacheng): V_GS(th) up to 2.5 V, why it was replaced
 - STM32G474 datasheet DS12288, Tables 54–55 (`Reference Docs/STM32 MCU/`)
-- Omron G5Q datasheet (coil table) and TE RT2 bistable datasheet: the SDC board relays
-- Littelfuse 1206L010/60WR: [LCSC C2153714](https://www.lcsc.com/product-detail/C2153714.html)
+- UNI-ROYAL 0805W8F2201T5E 2.2 kΩ 125 mW: [LCSC C17520](https://www.lcsc.com/product-detail/C17520.html)
 - FSG Rules 2026 v1.1, T 11.9 (`Reference Docs/FSUK Rules/`)
 
 ## Balancing switch
@@ -692,3 +725,225 @@ Balancing works with the charger unplugged and stops when the spread closes.
 - **Firmware:** read `BAL_EN_N` a few times before acting (debounce).
 
 Source: `Reference Docs/Balancing Switch/ALPS SSSS811101 Datasheet.pdf`
+
+## Power budget
+
+Every part on every sheet, read from the schematics (all 9 sheets) and the
+datasheets. **Worst case** = every load at its datasheet maximum at the same
+time, every pull-up being pulled low. **Typical** = normal running (CAN about
+half dominant, no faults).
+
+### Power tree
+
+![Power tree: LV 12 V, input protection, +12V, buck to ~6 V, 5 V LDO for +5V and 3.3 V LDO for +3V3, AMS_OK driver from +12V](docs/power/power-tree.svg)
+
+The buck does the big drop efficiently; the two LDOs remove its ripple. That
+matters most for the current sensor, whose output is ratiometric to its 5 V
+supply. The buck output must be about **6 V**, not 5.3 V: a 5 V LDO needs its
+dropout (typically 0.3–0.5 V at this current) on top of 5 V.
+
+Power-port names on every sheet: **`+12V`, `+5V`, `+3V3`** (`+5V_REGBUS` is the
+charger's isolated 5 V and stays separate). `Power.SchDoc` must use these
+exact names.
+
+### +3V3 (LDO from the buck)
+
+| Load | Sheet | Worst | Typical | Source |
+|---|---|---|---|---|
+| STM32G474 core, 170 MHz | MCU_STM32 | 34 mA | 30 mA | DS12288 Table 21, max at 85 °C, peripherals off |
+| STM32 peripherals in use (2× FDCAN, SPI, ADC1/2, DMA, timers, GPIO) | MCU_STM32 | 11 mA | 9 mA | DS12288 Table 35 (µA/MHz × 170 MHz) |
+| STM32 ADC analog | MCU_STM32 | 2 mA | 1 mA | estimate |
+| CHG_EN opto LED (330R from a GPIO) | Charger | 6.5 mA | 6.5 mA | while charging is allowed |
+| AMS_OK_MCU (1k + 100k) | AMS_SDC | 0.03 mA | 0.03 mA | 3.3 V / 101k |
+| BQ79600 VIO | Stack_Interface | 0.5 mA | 0.2 mA | estimate, not in the datasheet |
+| 2× TCAN1042 VIO | CAN | 0.6 mA | 0.2 mA | 300 µA max each |
+| BQ79600 pull-ups: nCS, MOSI, MISO 10k, SCLK 10k pull-down, NFAULT and SPI_RDY 100k | Stack_Interface | 1.4 mA | 0.5 mA | 0.33 mA per 10k only while its line is low (SCLK: high) |
+| CAN TXD/RXD pull-ups, 4× 10k | CAN | 1.3 mA | 0.7 mA | only while the line is low (dominant) |
+| BAL_EN_N pull-up 10k | MCU_STM32 | 0.33 mA | 0 mA | only while the switch is on |
+| NRST pull-up 10k, BOOT0 pull-down 10k | MCU_STM32 | 0.33 mA | 0 mA | NRST only during reset; BOOT0 sits low |
+| **Total** | | **≈ 58 mA** | **≈ 48 mA** | |
+
+LDO dissipation: (6 − 3.3) V × 58 mA ≈ **0.16 W**. Rate it **≥ 150 mA**.
+
+### +5V (LDO from the buck)
+
+| Load | Sheet | Worst | Typical | Source |
+|---|---|---|---|---|
+| 2× TCAN1042 VCC | CAN | 140 mA | 42 mA | 70 mA max each dominant at 60 Ω, 1.5 mA recessive; typical = half dominant (40 mA typ) |
+| BQ79600 BAT/CVDD/INH | Stack_Interface | 14 mA | 4 mA | 4 mA ACTIVE + 10 mA while transmitting (BQ79600 datasheet) |
+| LEM DHAB S/124 | Current_Sense | 20 mA | 15 mA | DHAB datasheet, both channels |
+| Current-sense dividers (3× 12k + 18k) | Current_Sense | 0.5 mA | 0.4 mA | 5 V / 30k + 2 × 4.75 V / 30k |
+| **Total** | | **≈ 175 mA** | **≈ 61 mA** | |
+
+LDO dissipation: (6 − 5) V × 175 mA ≈ **0.18 W**. Rate it **≥ 300 mA**, with
+dropout ≤ 0.5 V at 175 mA. A CAN bus fault can push one transceiver to
+110 mA; the TCAN1042's dominant time-out stops a stuck TXD from holding it
+there.
+
+### Buck (~6 V out)
+
+| | Worst | Typical |
+|---|---|---|
+| Output current: +5V LDO + +3V3 LDO | 233 mA | 109 mA |
+| Output power: 6 V × current | 1.40 W | 0.65 W |
+| Input power at 85 % efficiency | 1.65 W | 0.77 W |
+
+Rate the buck **≥ 0.5 A** output (2× margin), input range covering the LV
+battery (12 V nominal, up to ~16 V while charging).
+
+### +12V (LV input)
+
+| Load | Sheet | Worst | Typical |
+|---|---|---|---|
+| Buck input: 1.65 W / 12 V (0.77 W typical) | Power | 137 mA | 64 mA |
+| AMS_OK driver: Q2 gate divider 12 V / 20k | AMS_SDC | 0.6 mA | 0.6 mA |
+| AMS_OK output into the SDC pull-down (2K2 + 10k worst) | AMS_SDC | 1.0 mA | 0.1 mA |
+| **Total from the LV supply** | | **≈ 139 mA, 1.7 W** | **≈ 65 mA, 0.78 W** |
+
+At 11 V (low LV battery) the worst case rises to ≈ 152 mA.
+
+**Not on our budget:** the 10k Reg Bus pull-up on `Charger.SchDoc` (0.5 mA)
+is powered by the charger's own `+5V_REGBUS`, not by this board.
+
+**To confirm once the parts are picked:** buck efficiency at 6 V / 0.2 A,
+LDO dropout and quiescent current, BQ79600 VIO current.
+
+Sources: TCAN1042-Q1 datasheet (Supply Characteristics), BQ79600-Q1
+datasheet (Supply currents), STM32G474 DS12288 Tables 21 and 35, LEM DHAB
+S/124 datasheet v5 (Electrical data).
+
+## Buck converter: TPS62933F
+
+12 V LV battery → **6 V**, feeding the `+5V` and `+3V3` LDOs (see
+[Power tree](#power-tree)). Rated 1 A for a 233 mA worst-case load.
+
+### Part
+
+**TI TPS62933F** (`TPS62933FDRLR`, SOT-583, LCSC C5219272).
+
+- 3.8–30 V input, 3 A synchronous buck.
+- **FCCM:** forced continuous mode, which keeps switching at a fixed
+  frequency even at light load. That keeps the ripple predictable for the LDOs.
+- 500 kHz with the RT pin left open.
+- 0.8 V reference.
+- Not AEC-Q100. That's acceptable for v1.
+
+Datasheet: `Reference Docs/Power/` (SLUSEA4D).
+
+### Design
+
+Made in TI WEBENCH for 9–16 V in → 6 V at 1 A. The design files are in
+`Reference Docs/Power/WEBENCH TPS62933F (9-16V to 6V 1A)/`. We kept the
+WEBENCH values except where a part wasn't on LCSC or a better one was. The
+final list is `LCSC BOM.csv` in that folder.
+
+| Ref | Value | Part (LCSC) | Why |
+|---|---|---|---|
+| U1 | TPS62933F | TPS62933FDRLR (C5219272) | |
+| C_bulk | 100 µF 35 V electrolytic | EEEFT1V101AP (C128464) | damps the ringing of the harness inductance with the ceramics at power-on (added) |
+| C_in1, C_in2 | 10 µF 50 V X5R 1206 | CL31A106KBHNNNE (C13585) | input ripple current; 50 V because ceramics lose capacitance with DC voltage |
+| C_inx | 100 nF 50 V 0402 | CL05B104KB54PNC (C307331) | high-frequency decoupling right at VIN |
+| C_boot | 100 nF | CL05B104KO5NNNC (C1525) | bootstrap supply for the high-side gate drive |
+| C_ss | 33 nF | FCC0402B333K500AT (C7419416) | soft start, ~4–5 ms ramp |
+| L1 | 8.2 µH, 83 mΩ max, Isat 2.74 A | APV ANR5040T8R2M (C7427138) | WEBENCH's NIC part isn't on LCSC; ripple ≈ 0.8 A p-p, peak 1.46 A at 1 A load |
+| C_out | 47 µF 16 V X5R 1210 | CL32A476KOJNNNE (C2932477) | output ripple |
+| C_ff | 6.8 pF C0G | CL05C6R8CB5NNNC (C318598) | feed-forward across R_FBT: more phase margin, smaller dip on a load step |
+| R_FBT / R_FBB | 64.9k / 10k | C26984 / C25744 | Vout = 0.8 × (1 + 64.9k/10k) = **5.99 V** |
+| R_ENT / R_ENB | 511k / 86.6k | C64042 / C19709 | UVLO: on at 8.0 V, off at 7.0 V |
+
+**UVLO.** The buck only starts once the battery is above 8 V and stops below
+7 V. This stops it running from a flat or sagging LV battery. WEBENCH's
+1.18M / 169k gave about 8.8 V on and 6.9 V off.
+
+**Ripple target ≤ 30 mV.** The LDO after the buck rejects about 40 dB (100×) at
+500 kHz. Half an ADC LSB is about 0.4 mV, and 0.4 mV × 100 = 40 mV, so 30 mV
+leaves margin.
+
+### Simulation (LTspice)
+
+Files are in [`sim/buck/`](sim/buck/):
+
+| File | What |
+|---|---|
+| `buck_startup.asc` | the schematic, with the same values as the BOM table above |
+| `TPS62933F_LTspice.lib` | TI's model, patched so it runs in LTspice |
+| `TPS62933F.asy` | symbol for the model |
+| `buck_startup.log` | results (`.meas` lines at the end) |
+| `charts/` | plots of the run: `index.html` shows all of them, `make_charts.py` regenerates them |
+| `buck_startup_schematic.svg` | the image below, drawn from `buck_startup.asc` by `asc2svg.py` (`python asc2svg.py buck_startup.asc buck_startup_schematic.svg`) |
+
+![LTspice schematic: battery and harness (Lh, Rh), input caps, UVLO divider, TPS62933F, bootstrap, L1, output caps, feedback with Cff, 6 ohm load](sim/buck/buck_startup_schematic.svg)
+
+**Model.** TI's `TPS62933F_TRANS` PSpice transient model (SLUM859,
+`Reference Docs/Power/TPS62933F PSpice Model (SLUM859)/`). It models soft
+start, UVLO/EN, FCCM, current-mode control, the bootstrap, and over-current
+and over/under-voltage protection. It does **not** model quiescent current or
+temperature.
+
+**Patches to run it in LTspice.** As shipped, the model stalls in LTspice: the
+time step collapses to femtoseconds at the switching edges. Four numerical
+changes fix it, and the circuit stays the same:
+
+1. Clamp diodes inside the latches: emission coefficient N 0.01 → 1. LTspice's
+   own troubleshooting guide lists near-vertical diodes as a convergence killer.
+2. "Ideal" diodes: N 0.001 → 0.1.
+3. 2 ps logic delays → 2 ns. One switching cycle is 2000 ns.
+4. PSpice `VSWITCH` switches → LTspice `SW` switches, with the same on/off
+   resistance and the same smooth on/off transition (`Vh` negative).
+
+Solver settings: `.options reltol=0.005 trtol=7 method=gear`. A 9 ms run takes
+about 6 minutes.
+
+**What's simulated.**
+
+- The battery ramps 0 → 12 V in 1 ms.
+- A **harness model** between the battery and the board: `Lh` 1 µH + `Rh` 50 mΩ,
+  about 1 m of wire. It is **not on the PCB**; it's there because the wire
+  inductance can ring with the input caps at power-on.
+- Ceramics at their capacitance under DC voltage (estimates):
+  - C_in: 2 × 10 µF → 12 µF at 12 V.
+  - C_out: 47 µF → 28 µF at 6 V.
+- 1 A load (6 Ω).
+- L1 at its maximum DCR.
+
+**Results: start-up at 12 V, 1 A load.**
+
+| Check | Target | Result |
+|---|---|---|
+| Turn-on voltage (UVLO) | 8.0 V | **8.06 V** |
+| Rise to 90 % (5.4 V) after turn-on | smooth, ~5 ms | **3.86 ms**, no overshoot |
+| Output peak | no overshoot | **6.002 V** |
+| Output (steady state) | 6.0 V | **5.993 V** |
+| Output ripple | ≤ 30 mV p-p | **13.0 mV p-p** |
+| Inductor ripple | ~0.73 A p-p (calculated) | **0.79 A p-p** |
+| Inductor peak | < 2.74 A (Isat) | **2.07 A**, during start-up (25 % margin) |
+| Efficiency | | 97.6 %, which is **too high**: see below |
+
+![Start-up overview: VIN, VOUT, SS and EN over 9 ms](sim/buck/charts/01_startup_overview.svg)
+
+![Output voltage: start-up ramp and steady-state ripple](sim/buck/charts/02_output_voltage.svg)
+
+![Inductor current: start-up peak and steady-state ripple](sim/buck/charts/03_inductor_current.svg)
+
+![Switch node at ~500 kHz with VOUT](sim/buck/charts/04_switch_node.svg)
+
+![Input stage: VIN and input current through the harness](sim/buck/charts/06_input_stage.svg)
+
+More charts (power and efficiency, control signals, a start-up close-up, and a
+summary dashboard) are in [`sim/buck/charts/`](sim/buck/charts/).
+
+**Limits of this result.**
+
+- **Efficiency:** the model has no quiescent current and simplified switching
+  losses. Use the datasheet curve (about 90 % at 1 A) for the power budget.
+- **The model is patched.** The behaviour matches the datasheet (UVLO
+  threshold, soft-start time, ripple), but it hasn't been checked against TI's
+  original model in PSpice.
+- **Estimated values:** the cap values under DC voltage and the harness values
+  are estimates, not measured.
+- **Load:** 1 A is four times our worst-case load (233 mA), so the real ripple
+  and stress are lower.
+
+**Still to simulate:** load step 0.1 → 1 A (tests C_ff), steady state at 9 V
+and 16 V input, and hot-plug (16 V switched onto the harness: does VIN stay
+under 30 V?).
