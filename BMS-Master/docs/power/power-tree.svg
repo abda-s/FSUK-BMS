@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 400" font-family="Arial, Helvetica, sans-serif">
-  <title>BMS master power tree: LV 12 V through input protection to +12V, a buck to about 6 V, then a 5 V LDO for the +5V rail and a 3.3 V LDO for the +3V3 rail. +12V also feeds the AMS_OK driver.</title>
+  <title>BMS master power tree: LV 12 V through input protection to +12V, a buck to 6.5 V, then a 5 V LDO for the +5V rail and a 3.3 V LDO for the +3V3 rail. +12V also feeds the AMS_OK driver.</title>
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#1a1f24"/>
@@ -26,13 +26,13 @@
   <!-- buck -->
   <rect x="400" y="160" width="130" height="64" rx="6" fill="#e7f1fb" stroke="#1971c2" stroke-width="1.5"/>
   <text x="465" y="183" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a1f24">Buck</text>
-  <text x="465" y="200" text-anchor="middle" font-size="12" fill="#59636d">12 V → ~6 V</text>
+  <text x="465" y="200" text-anchor="middle" font-size="12" fill="#59636d">12 V → 6.5 V</text>
   <text x="465" y="215" text-anchor="middle" font-size="12" fill="#59636d">≥ 0.5 A</text>
 
   <!-- split -->
   <line x1="530" y1="192" x2="560" y2="192" stroke="#1971c2" stroke-width="2.5"/>
   <circle cx="560" cy="192" r="3.5" fill="#1971c2"/>
-  <text x="552" y="242" text-anchor="end" font-size="11" fill="#59636d">~6 V</text>
+  <text x="552" y="242" text-anchor="end" font-size="11" fill="#59636d">6.5 V</text>
   <text x="552" y="256" text-anchor="end" font-size="11" fill="#59636d">233 mA max</text>
   <polyline points="560,192 560,92 588,92" fill="none" stroke="#1971c2" stroke-width="2.5" marker-end="url(#a)"/>
   <polyline points="560,192 560,312 588,312" fill="none" stroke="#1971c2" stroke-width="2.5" marker-end="url(#a)"/>

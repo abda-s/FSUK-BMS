@@ -94,7 +94,7 @@
 <line x1="1840" y1="460" x2="1872" y2="460" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <line x1="1840" y1="468" x2="1872" y2="468" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <text x="1864" y="440" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="bold">Cout</text>
-<text x="1864" y="488" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">28u</text>
+<text x="1864" y="488" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">26u</text>
 <text x="1864" y="510" font-size="16" text-anchor="start" dominant-baseline="middle" fill="#555" font-weight="normal">Rser=3m</text>
 <line x1="1984" y1="488" x2="1984" y2="496" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <line x1="1968" y1="480" x2="1984" y2="488" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
@@ -104,7 +104,7 @@
 <line x1="1984" y1="416" x2="1984" y2="424" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <line x1="1984" y1="424" x2="2000" y2="432" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <text x="2004" y="440" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="bold">Rfbt</text>
-<text x="2004" y="476" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">64.9k</text>
+<text x="2004" y="476" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">71.5k</text>
 <line x1="2080" y1="468" x2="2080" y2="496" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <line x1="2080" y1="460" x2="2080" y2="432" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <line x1="2064" y1="460" x2="2096" y2="460" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
@@ -128,7 +128,7 @@
 <line x1="2208" y1="416" x2="2208" y2="424" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <line x1="2208" y1="424" x2="2224" y2="432" stroke="#202020" stroke-width="2" stroke-linecap="round"/>
 <text x="2228" y="440" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="bold">Rload</text>
-<text x="2228" y="476" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">6</text>
+<text x="2228" y="476" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">6.5</text>
 <line x1="64" y1="368" x2="64" y2="304" stroke="#1f4fd8" stroke-width="2" stroke-linecap="round"/>
 <line x1="64" y1="304" x2="112" y2="304" stroke="#1f4fd8" stroke-width="2" stroke-linecap="round"/>
 <line x1="112" y1="304" x2="160" y2="304" stroke="#1f4fd8" stroke-width="2" stroke-linecap="round"/>
@@ -240,22 +240,22 @@
 <text x="528" y="176" font-size="16" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">2x 10uF 50V = ~12uF at 12 V</text>
 <text x="896" y="176" font-size="16" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">UVLO 8.0 V on / 7.0 V off</text>
 <text x="1632" y="288" font-size="16" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">ANR5040T8R2M</text>
-<text x="1808" y="176" font-size="16" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">47uF 16V = ~28uF at 6 V</text>
-<text x="1936" y="768" font-size="16" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">Vout = 0.8 x (1 + 64.9k/10k) = 5.99 V</text>
-<text x="48" y="96" font-size="22" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">TPS62933F buck: 12 V -&gt; 6 V, start-up with a 1 A load.  Values = LCSC BOM.csv</text>
+<text x="1808" y="176" font-size="16" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">47uF 16V = ~26uF at 6.5 V</text>
+<text x="1936" y="768" font-size="16" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">Vout = 0.8 x (1 + 71.5k/10k) = 6.52 V</text>
+<text x="48" y="96" font-size="22" text-anchor="start" dominant-baseline="middle" fill="#3a7a3a" font-weight="normal">TPS62933F buck: 12 V -&gt; 6.5 V, start-up with a 1 A load.  Values = LCSC BOM.csv</text>
 <text x="48" y="848" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.include TPS62933F_LTspice.lib</text>
 <text x="48" y="880" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.options reltol=0.005 trtol=7 method=gear</text>
 <text x="48" y="912" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.save V(vout) V(vin) V(sw) V(ss) V(en) V(bst) V(fb) I(L1) I(Rh)</text>
 <text x="48" y="944" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.tran 0 9m 0 20n</text>
 <text x="48" y="976" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran t_on WHEN V(vout)=0.1 RISE=1</text>
 <text x="48" y="1008" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran vin_on FIND V(vin) AT=t_on</text>
-<text x="48" y="1040" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran t_90 WHEN V(vout)=5.4 RISE=1</text>
+<text x="48" y="1040" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran t_90 WHEN V(vout)=5.87 RISE=1</text>
 <text x="48" y="1072" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran vout_max MAX V(vout)</text>
 <text x="48" y="1104" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran il_max MAX I(L1)</text>
 <text x="48" y="1136" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran vout_avg AVG V(vout) FROM 8m TO 9m</text>
 <text x="48" y="1168" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran vout_pp PP V(vout) FROM 8.5m TO 9m</text>
 <text x="48" y="1200" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran il_pp PP I(L1) FROM 8.5m TO 9m</text>
 <text x="48" y="1232" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran pin AVG V(vin)*I(Rh) FROM 8m TO 9m</text>
-<text x="48" y="1264" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran pout AVG V(vout)*V(vout)/6 FROM 8m TO 9m</text>
+<text x="48" y="1264" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran pout AVG V(vout)*V(vout)/6.5 FROM 8m TO 9m</text>
 <text x="48" y="1296" font-size="20" text-anchor="start" dominant-baseline="middle" fill="#202020" font-weight="normal">.meas tran eff PARAM pout/pin</text>
 </svg>

@@ -42,23 +42,34 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
 - [x] Transformer marked "same part on both ends" on the schematic
 - [x] Balancing master switch on `MCU_STM32.SchDoc`, see [Balancing switch](#balancing-switch)
 - [x] Power budget, see [Power budget](#power-budget)
-- [x] Buck selected and designed: TPS62933F, 6 V 1 A, LCSC BOM; start-up simulated in LTspice, see [Buck converter](#buck-converter-tps62933f)
+- [x] Buck selected and designed: TPS62933F, 6.5 V 1 A, LCSC BOM; start-up simulated in LTspice, see [Buck converter](#buck-converter-tps62933f)
+- [x] LDOs selected: TI TLV76150DCYR (`+5V`) and TI TLV76133DCYR (`+3V3`), SOT-223, see [LDOs](#ldos-5v-3v3)
+- [x] LV input protection on `Power.SchDoc`: 1 A slow-blow fuse, SS34 reverse-polarity diode, SMBJ16A TVS, see [LV input protection](#lv-input-protection)
+- [x] Power while charging decided: the board runs from a separate battery like the LV battery, through the same `LV_IN` input, see [LV input protection](#lv-input-protection)
+- [x] `Power.SchDoc`: TPS62933F buck drawn and wired (6.5 V, R_FBT 71.5k), see [Buck converter](#buck-converter-tps62933f)
+- [x] `Power.SchDoc`: TLV76150DCYR and TLV76133DCYR wired with 2.2 µF in/out caps; `+5V` and `+3V3` reach every sheet, see [LDOs](#ldos-5v-3v3)
+- [x] Buck simulations: start-up, load step, 9 / 11 / 16 V input, hot-plug with and without the bulk cap, see [Simulation](#simulation-ltspice) and [More simulations](#more-simulations-load-step-and-input-range)
 
 ### To do
 
 Schematic:
 
-- [ ] `Power.SchDoc`: LV input, `+12V`, buck to ~6 V (≥ 0.5 A), `+5V` LDO (≥ 300 mA) and `+3V3` LDO (≥ 150 mA) from the buck, see [Power budget](#power-budget)
-- [ ] `Power.SchDoc`: draw the TPS62933F buck from the [BOM table](#design)
-- [ ] Pick the `+5V` and `+3V3` LDOs (800 mA rating, dropout ≤ 0.5 V)
-- [ ] LV input stage: reverse-polarity protection, fuse rating, TVS (SMBJ16A), power while charging
-- [ ] Buck sims still to run: load step, 9 V / 16 V input, hot-plug (see [Simulation](#simulation-ltspice))
-- [ ] `Connectors.SchDoc`: LV, CAN, sensor, SDC (`AMS_OK`), Reg Bus RJ12 and debug connectors (sheet is still empty)
+- [ ] `Power.SchDoc`: add a second 47 µF (C2932477) on the buck output; fixes the loop oscillation at 9 V input in simulation (see [More simulations](#more-simulations-load-step-and-input-range))
+- [ ] `Power.SchDoc`: annotate (designators are still `U?`, `C?`, `R?`)
+- [ ] `Connectors.SchDoc`: LV (feeds `LV_IN`), CAN, sensor, SDC (`AMS_OK`), Reg Bus RJ12 and debug connectors (sheet is still empty)
 - [ ] `MCU_STM32.SchDoc`: pick GPIOs for `AMS_OK_MCU`, `CHG_EN` and `BAL_EN_N`, add the ports / labels on the STM32 pins
 - [ ] Order the RJ12 (6P6C) Reg Bus jack online: not available locally
 - [ ] SWD debug header
 - [ ] Resolve the notes on `Stack_Interface.SchDoc`: second COM port for v1, 0 Ω resistors, cap packages
 - [ ] Verify CAN, ADC and memory specs in CubeMX/datasheet before ordering
+
+Power, understanding and bench checks:
+
+- [ ] Read Erickson & Maksimović, *Fundamentals of Power Electronics* (2nd ed.), chapters 2 and 3, then check the buck's L and C_out against my own calculation (see the note in [Design](#design))
+- [ ] Bench: ripple on `+5V` and `+3V3` under 0.4 mV p-p (scope AC-coupled, 20 MHz limit)
+- [ ] Bench: drop the input to 9 V and check the buck switches steadily (SW and output on a scope); raise the UVLO to ~10 V if not
+- [ ] Bench: `+5V` powers up cleanly into the real board (TLV761 foldback current limit)
+- [ ] Bench: hot-plug the LV supply a few times; the fuse must not blow on inrush
 
 SDC team (ask before freezing the schematic):
 
@@ -735,12 +746,13 @@ half dominant, no faults).
 
 ### Power tree
 
-![Power tree: LV 12 V, input protection, +12V, buck to ~6 V, 5 V LDO for +5V and 3.3 V LDO for +3V3, AMS_OK driver from +12V](docs/power/power-tree.svg)
+![Power tree: LV 12 V, input protection, +12V, buck to ~6.5 V, 5 V LDO for +5V and 3.3 V LDO for +3V3, AMS_OK driver from +12V](docs/power/power-tree.svg)
 
 The buck does the big drop efficiently; the two LDOs remove its ripple. That
 matters most for the current sensor, whose output is ratiometric to its 5 V
-supply. The buck output must be about **6 V**, not 5.3 V: a 5 V LDO needs its
-dropout (typically 0.3–0.5 V at this current) on top of 5 V.
+supply. The buck output is **6.5 V** (6.52 V), not 5.3 V: the 5 V LDO
+(TLV761) has its specs written for 1.5 V of headroom (VIN = VOUT + 1.5 V), see
+[LDOs](#ldos-5v-3v3).
 
 Power-port names on every sheet: **`+12V`, `+5V`, `+3V3`** (`+5V_REGBUS` is the
 charger's isolated 5 V and stays separate). `Power.SchDoc` must use these
@@ -763,7 +775,7 @@ exact names.
 | NRST pull-up 10k, BOOT0 pull-down 10k | MCU_STM32 | 0.33 mA | 0 mA | NRST only during reset; BOOT0 sits low |
 | **Total** | | **≈ 58 mA** | **≈ 48 mA** | |
 
-LDO dissipation: (6 − 3.3) V × 58 mA ≈ **0.16 W**. Rate it **≥ 150 mA**.
+LDO dissipation: (6.52 − 3.3) V × 58 mA ≈ **0.19 W**. Rate it **≥ 150 mA**.
 
 ### +5V (LDO from the buck)
 
@@ -775,18 +787,18 @@ LDO dissipation: (6 − 3.3) V × 58 mA ≈ **0.16 W**. Rate it **≥ 150 mA**.
 | Current-sense dividers (3× 12k + 18k) | Current_Sense | 0.5 mA | 0.4 mA | 5 V / 30k + 2 × 4.75 V / 30k |
 | **Total** | | **≈ 175 mA** | **≈ 61 mA** | |
 
-LDO dissipation: (6 − 5) V × 175 mA ≈ **0.18 W**. Rate it **≥ 300 mA**, with
+LDO dissipation: (6.52 − 5) V × 175 mA ≈ **0.27 W**. Rate it **≥ 300 mA**, with
 dropout ≤ 0.5 V at 175 mA. A CAN bus fault can push one transceiver to
 110 mA; the TCAN1042's dominant time-out stops a stuck TXD from holding it
 there.
 
-### Buck (~6 V out)
+### Buck (6.5 V out)
 
 | | Worst | Typical |
 |---|---|---|
 | Output current: +5V LDO + +3V3 LDO | 233 mA | 109 mA |
-| Output power: 6 V × current | 1.40 W | 0.65 W |
-| Input power at 85 % efficiency | 1.65 W | 0.77 W |
+| Output power: 6.52 V × current | 1.52 W | 0.71 W |
+| Input power at 85 % efficiency | 1.79 W | 0.84 W |
 
 Rate the buck **≥ 0.5 A** output (2× margin), input range covering the LV
 battery (12 V nominal, up to ~16 V while charging).
@@ -795,26 +807,111 @@ battery (12 V nominal, up to ~16 V while charging).
 
 | Load | Sheet | Worst | Typical |
 |---|---|---|---|
-| Buck input: 1.65 W / 12 V (0.77 W typical) | Power | 137 mA | 64 mA |
+| Buck input: 1.79 W / 12 V (0.84 W typical) | Power | 149 mA | 70 mA |
 | AMS_OK driver: Q2 gate divider 12 V / 20k | AMS_SDC | 0.6 mA | 0.6 mA |
 | AMS_OK output into the SDC pull-down (2K2 + 10k worst) | AMS_SDC | 1.0 mA | 0.1 mA |
-| **Total from the LV supply** | | **≈ 139 mA, 1.7 W** | **≈ 65 mA, 0.78 W** |
+| **Total from the LV supply** | | **≈ 151 mA, 1.8 W** | **≈ 71 mA, 0.85 W** |
 
-At 11 V (low LV battery) the worst case rises to ≈ 152 mA.
+At 11 V (low LV battery) the worst case rises to ≈ 165 mA.
 
 **Not on our budget:** the 10k Reg Bus pull-up on `Charger.SchDoc` (0.5 mA)
 is powered by the charger's own `+5V_REGBUS`, not by this board.
 
-**To confirm once the parts are picked:** buck efficiency at 6 V / 0.2 A,
+**To confirm once the parts are picked:** buck efficiency at 6.5 V / 0.2 A,
 LDO dropout and quiescent current, BQ79600 VIO current.
 
 Sources: TCAN1042-Q1 datasheet (Supply Characteristics), BQ79600-Q1
 datasheet (Supply currents), STM32G474 DS12288 Tables 21 and 35, LEM DHAB
 S/124 datasheet v5 (Electrical data).
 
+## LV input protection
+
+Between the LV connector (`LV_IN`) and the protected `+12V` rail, on
+`Power.SchDoc`. Everything after it (buck, bulk cap, AMS_OK driver on
+`AMS_SDC.SchDoc`) is on `+12V`, so it's all behind the protection.
+
+![LV input protection from Power.SchDoc: LV_IN, fuse 0452001.MRL, SS34 reverse-polarity diode, SMBJ16A TVS to GND, +12V](docs/power/input-protection.png)
+
+### Parts
+
+| Ref | Part | LCSC | Job | Key ratings |
+|---|---|---|---|---|
+| F1 | Littelfuse 0452001.MRL (Nano2 452, slow-blow) | C44669 | Opens on a short downstream | 1 A, 125 V DC, 50 A interrupt, 2410 SMD |
+| D1 | SS34 Schottky (MDD) | C8678 | Reverse polarity: blocks if LV is connected backwards | 40 V, 3 A, 80 A surge, SMA |
+| D2 | Littelfuse SMBJ16A TVS | C151254 | Clamps positive spikes (load dump, inductive kicks) | 16 V standoff, 17.8 V breakdown min, 26 V clamp at 23 A, 600 W, SMB |
+
+### Why this order
+
+`LV_IN → F1 → D1 → +12V`, with D2 from `+12V` to GND.
+
+- **TVS after the diode, not before it.** A reversed battery would
+  forward-bias a TVS placed before D1, short the input and blow the fuse.
+  After D1, it's protected by the diode.
+- **Fuse first:** it protects everything, including D1 and D2, from a short.
+- **D2's cathode (band) is on `+12V`.** It's unidirectional, so orientation
+  matters.
+
+### Sizing
+
+- **Fuse: slow-blow ~1 A.**
+  - Worst-case load is 151 mA (see [+12V](#12v-lv-input)), so 1 A gives
+    plenty of margin.
+  - The hot-plug simulation shows 58.7 A of inrush for about 8 µs, which is
+    roughly 58.7² × 8 µs / 3 ≈ 0.01 A²s.
+  - A small fast fuse could nuisance-blow on that. A 1 A slow-blow needs far
+    more to melt (LCSC lists 4.06 A²s melting I²t for the equivalent
+    JDTfuse JFC2410-1100TS), so it only opens on a real fault.
+  - DC rating (125 V) is well above our 16 V.
+- **D1 SS34 instead of a P-MOSFET.**
+  - At 151 mA it drops about 0.3–0.4 V and dissipates about 0.06 W.
+  - Its 80 A surge rating covers the 58.7 A inrush.
+  - A P-MOSFET would save the drop, but needs a gate zener and resistor;
+    it's only worth it above an amp or two.
+  - The drop moves the buck's turn-on from 8.0 V at `+12V` to about 8.4 V at
+    the connector.
+- **D2 SMBJ16A.**
+  - 16 V standoff, so it doesn't conduct at 16 V while charging.
+  - It clamps at 26 V, under the TPS62933F's 32 V absolute max.
+
+### Simulation (hot-plug)
+
+16 V switched onto about 1 m of harness (1 µH, 50 mΩ) in 1 µs. Files:
+`sim/buck/buck_hotplug_tvs.cir`, `buck_hotplug_notvs.cir`,
+`buck_hotplug_nobulk.cir`.
+
+| Case | VIN peak | TVS current | Inrush peak |
+|---|---|---|---|
+| Our design (100 µF bulk + TVS) | **17.07 V** | 0 A (never reaches its 17.8 V breakdown) | 58.7 A |
+| No TVS | 17.07 V | — | 58.7 A |
+| **No bulk cap**, TVS fitted | **24.2 V** (clamped) | **17.0 A** | 48.3 A |
+
+- **The 100 µF bulk cap does the real work:** its 0.3 Ω ESR damps the
+  harness LC ringing, so VIN only overshoots by 1 V.
+- **The TVS is the backstop** if the cap is missing or fails. It held VIN at
+  24 V, under the buck's 32 V absolute max, and 17 A for a few µs is well
+  within its 600 W rating.
+- The TVS model is approximate, built from the datasheet's breakdown and
+  clamp figures, not a vendor model.
+
+### Power while charging
+
+While the car is on the charger, the board is powered from **a separate
+battery, just like the LV battery** (12 V nominal). It's the same voltage
+range, so it goes into the same `LV_IN` input and through the same
+protection. No change to the input stage.
+
+### Still open
+
+- `LV_IN` gets its other end when the LV connector is drawn on
+  `Connectors.SchDoc` and wired through `Top.SchDoc`.
+
+Sources: Littelfuse 0452 series and SMBJ series ratings from LCSC listings
+(C44669, C151254); SS34 ratings from LCSC C8678; SMBJ datasheet in
+`Reference Docs/Power/`. Simulation results from the files above.
+
 ## Buck converter: TPS62933F
 
-12 V LV battery → **6 V**, feeding the `+5V` and `+3V3` LDOs (see
+12 V LV battery → **6.5 V**, feeding the `+5V` and `+3V3` LDOs (see
 [Power tree](#power-tree)). Rated 1 A for a 233 mA worst-case load.
 
 ### Part
@@ -830,17 +927,92 @@ S/124 datasheet v5 (Electrical data).
 
 Datasheet: `Reference Docs/Power/` (SLUSEA4D).
 
+### Why this buck
+
+**Why a buck at all, and not just two LDOs from 12 V.** At the worst-case
+load, two LDOs from 12 V would burn the whole voltage drop as heat:
+
+| Supply | Calculation | Heat |
+|---|---|---|
+| `+5V` | (12 − 5) V × 175 mA | 1.2 W |
+| `+3V3` | (12 − 3.3) V × 58 mA | 0.5 W |
+| **Total at 12 V** | | **1.7 W** |
+| **Total at 16 V** (charging) | | **2.7 W** |
+
+That needs big packages and copper. With the buck to 6.5 V first, the LDOs
+only drop 1.5–3.2 V, which is 0.46 W together, and the buck itself loses about
+0.27 W at 85 % efficiency.
+
+**The options.** The main alternative was the **TI LMR51430**, which is what
+the LSU BMS motherboard uses (see `FSAE_LSU_BMS/MotherBoard`). We also
+considered the other members of our part's family.
+
+| | **TPS62933F** (chosen) | LMR51430XF (FPWM, 500 kHz) | TPS62932 / TPS62933 |
+|---|---|---|---|
+| Input range (abs max) | 3.8–30 V (32 V) | **4.5–36 V (38 V)** | 3.8–30 V (32 V) |
+| Output current | 3 A | 3 A | 2 A / 3 A |
+| Light-load mode | **FCCM, fixed frequency** | **FPWM, fixed frequency** | PFM: frequency drops at light load |
+| Switching frequency | **200 kHz–2.2 MHz, set by RT** | 500 kHz fixed | 200 kHz–2.2 MHz |
+| Soft start | **Set by C_SS** (33 nF ≈ 5 ms) | Fixed internal, 3.2–5.4 ms | Set by C_SS |
+| MOSFETs (high / low side) | **76 / 32 mΩ** | 120 / 70 mΩ | 76 / 32 mΩ |
+| FB reference | 0.8 V ±1.5 % (0–85 °C) | 0.6 V ±1.5 % | 0.8 V ±1.5 % |
+| Package | SOT-583, 1.6 × 2.1 mm, 0.5 mm pitch | **SOT-23-6, easier to hand solder** | SOT-583 |
+| Simulation model | TI PSpice model, run in LTspice ([Simulation](#simulation-ltspice)) | not checked | not checked |
+
+**Why the TPS62933F.**
+
+- **Fixed frequency at our load.** Our load is only 0.1–0.23 A. At that load
+  the PFM parts (TPS62932/33) switch in bursts, at a frequency that moves with
+  the load. FCCM keeps switching at a steady 500 kHz, which TI says "maintains
+  lower output ripple during all load conditions", and the ripple stays at one
+  known frequency.
+  - The LMR51430's FPWM version does this too, so this rules out the PFM
+    parts, not the LMR.
+- **Adjustable soft start and frequency.** C_SS sets the start-up ramp, and RT
+  can move the frequency later (for example away from a noise problem
+  measured on the bench) without changing the part. The LMR51430 has neither.
+- **Lower switch resistance.** 76 / 32 mΩ against 120 / 70 mΩ. At 0.23 A this
+  is a small saving; it matters more if the 6.5 V rail ever carries more load.
+- **We have a working design and a verified simulation.** WEBENCH generated the
+  design, and the TI model runs in LTspice with results that match the
+  datasheet.
+- **Stock:** LCSC C5219272, 1131 pcs on 2026-10-21.
+
+**What we gave up.**
+
+- **Input headroom:** 30 V maximum operating (32 V absolute) against the
+  LMR51430's 36 V (38 V). The SMBJ16A TVS clamps at 26 V, under 32 V, so the
+  input stage must keep that TVS. The LMR51430 would have had about 12 V more
+  margin.
+- **Package:** SOT-583 has a 0.5 mm pitch, which needs care when hand
+  soldering; SOT-23-6 is easier.
+- **Not automotive:** not AEC-Q100. The LMR51430 isn't either.
+
+Sources: TPS6293x datasheet SLUSEA4D (Features, Electrical Characteristics),
+LMR51430 datasheet SLUSEF4A (Features, Device Comparison, Absolute Maximum
+Ratings, Electrical Characteristics), both in `Reference Docs/Power/`.
+Load currents from [Power budget](#power-budget).
+
 ### Design
 
-![Buck schematic from Power.SchDoc: +12V in, input caps, EN divider, TPS62933F, bootstrap, soft start, 8.2 uH inductor, feedback divider with Cff, output cap, +6V out](docs/power/buck-schematic.png)
+![Buck schematic from Power.SchDoc: +12V in, input caps, EN divider, TPS62933F, bootstrap, soft start, 8.2 uH inductor, feedback divider with Cff, output cap, +6V5 out](docs/power/buck-schematic.png)
 
 `Power.SchDoc`. RT is left open (500 kHz). The LTspice copy of this circuit is
 in [Simulation](#simulation-ltspice).
 
-Made in TI WEBENCH for 9–16 V in → 6 V at 1 A. The design files are in
+Made in TI WEBENCH for 9–16 V in → 6 V at 1 A, then raised to 6.5 V by changing R_FBT (see the BOM table). The design files are in
 `Reference Docs/Power/WEBENCH TPS62933F (9-16V to 6V 1A)/`. We kept the
 WEBENCH values except where a part wasn't on LCSC or a better one was. The
 final list is `LCSC BOM.csv` in that folder.
+
+> **Note: the inductor and output capacitor values come from WEBENCH, not
+> from my own analysis.** The design works (the simulations below pass), but
+> I don't fully understand yet why those values were chosen. Following
+> feedback, I need to read **chapters 2 and 3** of *Fundamentals of Power
+> Electronics* (Robert W. Erickson and Dragan Maksimović, 2nd edition):
+> steady-state converter analysis (inductor volt-second and capacitor
+> charge balance, ripple), and steady-state equivalent circuits, losses and
+> efficiency. Then check the L and C_out values against that analysis.
 
 | Ref | Value | Part (LCSC) | Why |
 |---|---|---|---|
@@ -853,7 +1025,7 @@ final list is `LCSC BOM.csv` in that folder.
 | L1 | 8.2 µH, 83 mΩ max, Isat 2.74 A | APV ANR5040T8R2M (C7427138) | WEBENCH's NIC part isn't on LCSC; ripple ≈ 0.8 A p-p, peak 1.46 A at 1 A load |
 | C_out | 47 µF 16 V X5R 1210 | CL32A476KOJNNNE (C2932477) | output ripple |
 | C_ff | 6.8 pF C0G | CL05C6R8CB5NNNC (C318598) | feed-forward across R_FBT: more phase margin, smaller dip on a load step |
-| R_FBT / R_FBB | 64.9k / 10k | C26984 / C25744 | Vout = 0.8 × (1 + 64.9k/10k) = **5.99 V** |
+| R_FBT / R_FBB | 71.5k / 10k | C43534 / C25744 | Vout = 0.8 × (1 + 71.5k/10k) = **6.52 V**. Was 64.9k (5.99 V); raised so the 5 V LDO gets the 1.5 V headroom its specs assume |
 | R_ENT / R_ENB | 511k / 86.6k | C64042 / C19709 | UVLO: on at 8.0 V, off at 7.0 V |
 
 **UVLO.** The buck only starts once the battery is above 8 V and stops below
@@ -907,22 +1079,22 @@ about 6 minutes.
   inductance can ring with the input caps at power-on.
 - Ceramics at their capacitance under DC voltage (estimates):
   - C_in: 2 × 10 µF → 12 µF at 12 V.
-  - C_out: 47 µF → 28 µF at 6 V.
-- 1 A load (6 Ω).
+  - C_out: 47 µF → 26 µF at 6.5 V.
+- 1 A load (6.5 Ω).
 - L1 at its maximum DCR.
 
-**Results: start-up at 12 V, 1 A load.**
+**Results: start-up at 12 V, 1 A load** (buck at 6.52 V; the 6.0 V run is kept in `sim/buck/results/buck_startup_6V0.log`).
 
 | Check | Target | Result |
 |---|---|---|
-| Turn-on voltage (UVLO) | 8.0 V | **8.06 V** |
-| Rise to 90 % (5.4 V) after turn-on | smooth, ~5 ms | **3.86 ms**, no overshoot |
-| Output peak | no overshoot | **6.002 V** |
-| Output (steady state) | 6.0 V | **5.993 V** |
-| Output ripple | ≤ 30 mV p-p | **13.0 mV p-p** |
-| Inductor ripple | ~0.73 A p-p (calculated) | **0.79 A p-p** |
-| Inductor peak | < 2.74 A (Isat) | **2.07 A**, during start-up (25 % margin) |
-| Efficiency | | 97.6 %, which is **too high**: see below |
+| Turn-on voltage (UVLO) | 8.0 V | **8.07 V** |
+| Rise to 90 % (5.87 V) after turn-on | smooth, ~5 ms | **3.86 ms**, no overshoot |
+| Output peak | no overshoot | **6.529 V** (+0.13 %) |
+| Output (steady state) | 6.52 V | **6.521 V** |
+| Output ripple | ≤ 30 mV p-p | **13.3 mV p-p** |
+| Inductor ripple | ~0.73 A p-p (calculated) | **0.78 A p-p** |
+| Inductor peak | < 2.74 A (Isat) | **1.92 A**, during start-up (30 % margin) |
+| Efficiency | | 97.7 %, which is **too high**: see below |
 
 ![Start-up overview: VIN, VOUT, SS and EN over 9 ms](sim/buck/charts/01_startup_overview.svg)
 
@@ -949,6 +1121,244 @@ summary dashboard) are in [`sim/buck/charts/`](sim/buck/charts/).
 - **Load:** 1 A is four times our worst-case load (233 mA), so the real ripple
   and stress are lower.
 
-**Still to simulate:** load step 0.1 → 1 A (tests C_ff), steady state at 9 V
-and 16 V input, and hot-plug (16 V switched onto the harness: does VIN stay
-under 30 V?).
+### More simulations: load step and input range
+
+Netlists in `sim/buck/`: `buck_loadstep.cir`, `buck_vin9.cir`,
+`buck_vin11.cir`, `buck_vin16.cir`, plus the comparison runs
+`buck_vin9_6V0.cir` (old 6.0 V output) and `buck_vin9_2cout.cir`
+(2× 47 µF). Each log has the measurements at the end. Hot-plug results are in
+[LV input protection](#lv-input-protection).
+
+**Load step, 12 V in:** 0.1 A → 1 A at 6 ms, back to 0.1 A at 7 ms.
+
+| Check | Result | |
+|---|---|---|
+| Dip when the load jumps to 1 A | 176 mV (2.7 %) | ✅ |
+| Overshoot when it drops back | 144 mV (2.2 %) | ✅ |
+| Settles to | 6.521 V | ✅ |
+
+**Input range, 1 A load:**
+
+| Input | Output C | Output | Output ripple | Inductor ripple (calc.) | |
+|---|---|---|---|---|---|
+| 16 V | 1× 47 µF | 6.521 V | 14.3 mV | 1.00 A (1.00 A) | ✅ |
+| 11 V | 1× 47 µF | 6.521 V | 14.0 mV | 0.71 A (0.65 A) | ✅ |
+| **9 V** | **1× 47 µF** | 6.520 V | **275 mV** | **2.50 A** (0.44 A) | ❌ **loop oscillates** |
+| 9 V, old 6.0 V output | 1× 47 µF | 5.994 V | 311 mV | 3.02 A | ❌ same problem |
+| **9 V** | **2× 47 µF** | 6.521 V | **5.4 mV** | **0.46 A** (0.44 A) | ✅ |
+
+**At 9 V input the control loop oscillates.**
+- The on-time swings between about 0.9 and 2.9 µs over roughly 10 switching
+  cycles, instead of a steady 1.46 µs.
+- It isn't caused by the 6.5 V change: the original 6.0 V WEBENCH design
+  does the same.
+- It only shows at low input, which means high duty cycle (72 %). With one
+  47 µF (about 26 µF left at 6.5 V because of DC bias), the loop runs out of
+  phase margin there.
+- **A second 47 µF on the output fixes it.** The inductor ripple then matches
+  the hand calculation (steady switching), and the output ripple halves.
+
+**Recommendation: add a second 47 µF 16 V X5R 1210 (CL32A476KOJNNNE, C2932477)
+on the buck output, in parallel with the first.** This comes from the patched
+TI model, not hardware, so confirm on the bench: drop the input to 9 V and
+watch SW and the output on a scope.
+
+Also open: the UVLO lets the buck run down to 7 V input, but a 12 V LV
+battery is flat long before that. Raising the UVLO to switch off around 10 V
+is a two-resistor change if the bench shows trouble at low input.
+
+## LDOs (+5V, +3V3)
+
+Two LDOs take the buck's 6.5 V down to `+5V` and `+3V3` and clean off the buck's
+ripple. **Chosen: TI TLV761.** We use the **5 V version, TI TLV76150DCYR**,
+for `+5V` and the **3.3 V version, TI TLV76133DCYR**, for `+3V3`.
+
+| Rail | Part | Output | Current rating | Our load | Package | LCSC |
+|---|---|---|---|---|---|---|
+| `+5V` | TLV76150DCYR | fixed 5.0 V | 1 A | 175 mA | SOT-223 | C5845194 |
+| `+3V3` | TLV76133DCYR | fixed 3.3 V | 1 A | 58 mA | SOT-223 | C7527500 |
+
+![LDOs from Power.SchDoc: TLV76133DCYR from +6V5 to +3V3 and TLV76150DCYR from +6V5 to +5V, each with 2.2 uF on IN and OUT; OUT pin 2 tied to the tab (pin 4)](docs/power/ldos.png)
+
+On `Power.SchDoc`: each LDO takes `+6V5` on IN (pin 3) and has its OUT pin 2 tied to
+the tab (pin 4). C_IN and C_OUT are both 2.2 µF 25 V X7R 0805 (CL21B225KAFNNNE, C19110),
+per the datasheet's 2.2 µF nominal C_OUT and 1 µF nominal C_IN.
+
+### Reading the output voltage from the part number
+
+The datasheet never prints "TLV76133 = 3.3 V" in one line. The voltage is
+coded into the part number, and the code is explained in a separate table.
+Page numbers below are for the TLV761 datasheet, revision D (English
+SBVS349D and Chinese ZHCSKS3D, both in `Reference Docs/LDO/`):
+
+- **Page 19, section 8.1.1, Table 8-1 "Available Options"** (device
+  nomenclature). The format is `TLV761 abxxxy`: "ab is the nominal output
+  voltage… use 33 for 3.3V". So `TLV761·33·DCY·R` breaks down as:
+
+  | Field | Value | Meaning |
+  |---|---|---|
+  | `ab` | 33 | 3.3 V |
+  | `xxx` | DCY | SOT-223 package |
+  | `y` | R | reel |
+
+  The same rule gives `50` = 5.0 V, so the 5 V part is **TLV76150DCYR**.
+- **Page 21, Package Option Addendum:** `TLV76133DCYR`, SOT-223 (DCY),
+  Active / Production, marking "76133C". `TLV76150DCYR` is listed on the same
+  page, also active.
+- **Page 16, design example:** "the 3.3-V, fixed-version TLV76133 is selected
+  and is powered by a standard 12-V input". That's the datasheet naming it as
+  3.3 V in words.
+
+Page 1 only says "fixed output, 0.8 V to 13 V in 100 mV steps", because it
+describes the whole family. That's why it's easy to miss.
+
+### What we were looking for
+
+| Requirement | Value | Why |
+|---|---|---|
+| Input max | **≥ 16 V** | 6.5 V in normally, but a buck with a shorted high-side switch puts 12–16 V on the LDO. It must survive and keep regulating so nothing downstream sees it. |
+| Output | **fixed 5.0 V / 3.3 V** | No external divider, so no resistor tolerance added on top. |
+| Accuracy | **±1–2 % over temperature** | The current sensor's output is ratiometric to 5 V. |
+| Dropout | **< 0.5 V at 175 mA** (5 V rail) | The buck was 6 V when we searched (1 V of headroom); it's now 6.5 V. |
+| Current | ≥ 800 mA rating | Worst-case loads are 175 mA (`+5V`) and 58 mA (`+3V3`). |
+| PSRR at 500 kHz | **≥ 30 dB** | Knocks the buck's 13 mV ripple below half an ADC step (0.4 mV); see [PSRR](#psrr-how-much-buck-ripple-gets-through). |
+| Package | **SOT-223 or similar leaded** | Hand soldered; no WSON/QFN. |
+
+### Candidates
+
+All datasheets are in `Reference Docs/LDO/`.
+
+| Part | Input (operating) | Fixed 5 V and 3.3 V | Current | Accuracy over temp | PSRR, highest frequency given | Package | Result |
+|---|---|---|---|---|---|---|---|
+| **TI TLV761** | 2.5–18 V | yes | 1 A | **±1.75 %** | **40 dB @ 1 MHz** | **SOT-223** | **chosen** |
+| TI TLV767 / TLV767-Q1 | 2.5–16 V | yes | 1 A | ±1 % | 46 dB @ 1 MHz | WSON / HVSSOP | ✗ package not hand-solderable |
+| ST LDL1117 | 2.6–18 V | yes | 1.2 A | ±3 % | ~44 dB @ 100 kHz (curve stops there, ~30 dB @ 500 kHz extrapolated) | SOT-223 | ✗ accuracy, no margin on PSRR |
+| Microchip MIC39100 | 2.25–16 V | yes | 1 A | ±2 % | curves only, not readable at 500 kHz | SOT-223 | ✗ PSRR unknown, ~4× the price |
+| MaxLinear SPX3819 | 2.5–16 V | yes | 500 mA | ±2 % | "70 dB", frequency not stated | SOT-23-5 | ✗ PSRR unknown, below 800 mA |
+| TI LP38692 | 2.7–10 V | yes | 1 A | ±5 % | 50 dB @ 100 kHz | SOT-223 | ✗ accuracy |
+| TI LM1117 | up to 15 V | yes | 800 mA | ±1–2 % | low | SOT-223 | ✗ dropout 1.2 V |
+| Diodes ZLDO1117Q | 2.7–18 V | yes | 1 A | ±2 % | low | SOT-223 | ✗ dropout up to 1.2 V |
+| Diodes AP7361C | 2.2–6.0 V | 3.3 V only | 1 A | ±1 % | dips to 20–25 dB near 300–500 kHz | SOT-223 | ✗ 6 V max, no fixed 5 V |
+| Diodes AP2114 | up to 6.0 V | 3.3 V only | 1 A | ±1.5 % | 68 dB @ 1 kHz | SOT-223 | ✗ 6 V max |
+| CJ CJ6109 | 1.6–6.0 V | up to 5 V | 1 A | ±2 % | 70 dB @ 10 kHz | SOT-223 | ✗ 6 V max |
+| Ricoh RP131x | 1.6–6.5 V | — | 1 A | ±1 % | 70 dB @ 1 kHz | SOT-89-5, DFN | ✗ 6.5 V max |
+| Runic RS3215 | 2.7–6.5 V | 3.3 V only | 500 mA | ±0.75 % | 75 dB @ 100 Hz | SOT-23-5 | ✗ 6.5 V max |
+| TI LP5912-EP | 1.6–6.5 V | — | 500 mA | — | 75 dB @ 1 kHz | WSON | ✗ 6.5 V max, package |
+| Richtek RTQ2539A | 1.1–6.5 V | — | 3 A | ±1 % | 40 dB @ 500 kHz | WQFN | ✗ 6.5 V max, package |
+| TI TPS7A88 (dual) | 1.4–6.5 V | adjustable only | 2 × 1 A | ±1 % | 40 dB @ 1 MHz | WQFN | ✗ 6.5 V max, adjustable, package |
+
+**The input limit eliminated most of them.** Any part rated for 6.0–6.5 V
+would run at or over its limit from our 6.5 V and die if the buck fails. That alone
+removes AP7361C, AP2114, CJ6109, RP131x, RS3215, LP5912, RTQ2539A and TPS7A88,
+even the ones with good PSRR. The old x1117 regulators (LM1117, ZLDO1117Q)
+take 15–18 V but need about 1.2 V of dropout, more than the 1 V we have.
+
+### Why the TLV761
+
+- **18 V input:** survives a shorted buck and keeps both rails regulated.
+- **Fixed 5.0 V and 3.3 V:** no external resistors.
+- **±1.75 % over temperature, line and load:** the best of the SOT-223 parts.
+- **Dropout:** 0.9 V typical / 1.6 V max at 1 A. It's a CMOS pass transistor,
+  so dropout scales with current: about 0.16 V typical / 0.28 V max at our
+  175 mA. That's well inside 1 V.
+- **PSRR:** 60 dB at 1 kHz and 40 dB at 1 MHz, so roughly 43–46 dB at
+  500 kHz. That's about 13 dB above the 30 dB we need. It's the only
+  hand-solderable part that publishes a high-frequency PSRR figure.
+- **SOT-223** with the standard x1117 pinout: 1 GND, 2 OUT (and tab), 3 IN.
+- **1 A, 95.4 °C/W:** 0.27 W (5 V rail) gives about +25 °C; 0.19 W (3.3 V rail) about +18 °C.
+- **Stable with a 1 µF ceramic output capacitor** (1–220 µF allowed).
+
+**Caveats:**
+- **Headroom on the 5 V rail (resolved).** The datasheet's Electrical
+  Characteristics are specified at **VIN = VOUT + 1.5 V**, which is 6.5 V for
+  the 5 V part. With the buck at 6.0 V it would have had only 1.0 V.
+  - It would still regulate (dropout is at most 0.28 V at 175 mA).
+  - But accuracy, line regulation and PSRR are only characterised at 1.5 V
+    of headroom, and PSRR drops as headroom shrinks (figure 5-18).
+  - **So the buck was raised to 6.52 V** (R_FBT 64.9k → 71.5k). Every spec
+    now applies as written, at a cost of 0.27 W in the 5 V LDO and 0.19 W in
+    the 3.3 V LDO.
+- **Foldback current limit.** With the output shorted, the TLV761 limits to
+  150 mA min / 250 mA typ / 350 mA max, rising back towards 1.1 A as the
+  output recovers.
+  - A load drawing more than about 150 mA while the rail is still low at
+    power-up could hold it down.
+  - Ours doesn't: the 175 mA worst case needs both CAN buses active, which
+    needs the MCU running.
+  - Check the 5 V rail's power-up on the bench.
+- **The PSRR curves in the datasheet are at 1.8 V out from 3.3 V in.**
+- **Not AEC-Q100.** None of the SOT-223 candidates are.
+- **Verify on the bench:** scope `+5V` and `+3V3`, AC coupled with the 20 MHz
+  limit on; the ripple must be under 0.4 mV.
+
+Sources: TLV761 datasheet SBVS349D (Recommended Operating Conditions,
+Electrical Characteristics, Thermal Information, Pin Functions); the other
+datasheets in `Reference Docs/LDO/`; TPS7A88 figures from the
+[TI product page](https://www.ti.com/product/TPS7A88). Stock from LCSC,
+2026-10-23.
+
+### PSRR: how much buck ripple gets through
+
+PSRR (power supply rejection ratio) is how well the LDO stops ripple on its
+input from reaching its output:
+
+```
+PSRR (dB) = 20 × log10( V_ripple,in / V_ripple,out )
+V_ripple,out = V_ripple,in / 10^(PSRR / 20)
+```
+
+**Higher is better.** PSRR is the ratio of input to output ripple, so a bigger
+ratio means less ripple out. Every 20 dB divides the ripple by 10 more.
+
+| PSRR | Ripple divided by | Our 13 mV of buck ripple becomes |
+|---|---|---|
+| 20 dB | 10 | 1.3 mV |
+| 40 dB | 100 | 130 µV |
+| 48 dB | 251 | 52 µV |
+| 60 dB | 1000 | 13 µV |
+
+**What we need.** The 12-bit ADC at 3.3 V has a step of 0.8 mV, so half a
+step is 0.4 mV. We need 13 mV / 0.4 mV ≈ 32×, which is 20 × log10(32) =
+**30 dB minimum at 500 kHz**.
+
+**Why PSRR depends on frequency.** An LDO is a feedback loop: it compares its
+output with an internal reference and drives the pass transistor to cancel
+any error. Ripple that leaks through the transistor is reduced by the loop
+gain T:
+
+```
+V_out ≈ V_leak / (1 + T(f))        T(f) = T0 / (1 + f / f_p)
+```
+
+- **Low frequency:** T is large (around 70 dB), so the loop removes almost
+  all the ripple.
+- **Above the error amplifier's pole f_p:** T falls 20 dB per decade, and the
+  PSRR falls with it.
+- **Around the loop bandwidth** (about 1 MHz for small LDOs): T ≈ 1, and the
+  loop barely helps.
+
+At high frequency the **output capacitor** takes over. The pass transistor
+looks like a high impedance, and C_out shunts the ripple to ground, so
+Z_Cout = 1 / (2π·f·C_out) falls as frequency rises. For 1 µF:
+
+| f | Z_Cout |
+|---|---|
+| 1 kHz | 159 Ω |
+| 100 kHz | 1.6 Ω |
+| 500 kHz | 0.32 Ω |
+
+A real PSRR curve is the two added together: it falls as the loop gives up,
+then levels off as the capacitor takes over. The TLV767, for example, gives
+70 dB at 1 kHz, 53 dB at 100 kHz and 46 dB at 1 MHz.
+
+**How to read it on a datasheet.** Use the "PSRR vs Frequency" graph at
+**500 kHz** (our buck's switching frequency), at a load and input-to-output
+headroom close to ours. The headline number on page 1 is usually at 1 kHz
+and overstates what we'll get. A bigger C_out generally improves
+high-frequency PSRR; datasheets often show this as a "PSRR vs C_OUT" graph.
+
+Video: [LDO basics: Power Supply Rejection Ratio (PSRR)](https://www.youtube.com/watch?v=-9mHFbweOb8) (Texas Instruments)
+
+Sources: TLV767 datasheet SLVSE84D (PSRR figures). The loop-gain model is
+the standard single-pole simplification, not taken from a specific
+datasheet.

@@ -1,0 +1,27 @@
+* Hot-plug WITHOUT the 100 uF bulk cap, WITH SMBJ16A TVS (shows why the bulk cap is there)
+V1 vbat 0 PWL(0 0 1u 16)
+Lh vbat N001 1u
+Rh N001 vin 50m
+Cin vin 0 12u Rser=3m
+Cinx vin 0 100n
+Rent vin en 511k
+Renb en 0 86.6k
+Css ss 0 33n
+X1 bst en fb 0 NC_01 ss sw vin TPS62933F_TRANS
+Cboot bst sw 100n
+L1 sw vout 8.2u Rser=83m
+Cout vout 0 26u Rser=3m
+Rfbt vout fb 71.5k
+Cff vout fb 6.8p
+Rfbb fb 0 10k
+Rload vout 0 6.5
+Dtvs 0 vin SMBJ16A
+.model SMBJ16A D(Is=1e-12 N=1.2 Rs=0.36 BV=17.8 IBV=1m Cjo=1n)
+.include TPS62933F_LTspice.lib
+.options reltol=0.005 trtol=7 method=gear
+.save V(vout) V(vin) V(sw) I(L1) I(Rh) I(Dtvs)
+.tran 0 100u 0 5n
+.meas tran vin_max MAX V(vin)
+.meas tran itvs_max MAX -I(Dtvs)
+.meas tran ih_max MAX I(Rh)
+.end

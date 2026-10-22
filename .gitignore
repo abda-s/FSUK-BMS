@@ -32,3 +32,6 @@ Reference Docs/Open-Source BMS Projects/*/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Raw datasheet downloads before renaming (duplicates of the PDFs in Reference Docs/LDO/)
+Reference Docs/LDO/_raw/

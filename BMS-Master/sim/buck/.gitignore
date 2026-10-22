@@ -5,3 +5,4 @@
 *.op.raw
 charts/buck_startup_data.csv
 charts/index.html
+charts/*.png

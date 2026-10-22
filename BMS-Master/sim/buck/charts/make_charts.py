@@ -1,6 +1,6 @@
 """
 LTspice raw-file reader + chart generator for buck_startup.raw
-(TPS62933F buck, 12 V -> 6 V, transient startup).
+(TPS62933F buck, 12 V -> 6.5 V, transient startup).
 
 Binary layout of this LTspice "fast access" raw file:
   UTF-16LE text header, "Binary:\n" then, per point, a 48-byte record:
@@ -36,7 +36,8 @@ VAR_NAMES = ["V(bst)", "V(en)", "V(fb)", "V(ss)", "V(sw)",
 
 # ----------------------------------------------------------------------------- read
 with open(RAW, "rb") as fh:
-    fh.seek(1000)                       # start of the binary block
+    head = fh.read(4000)
+    fh.seek(head.find("Binary:\n".encode("utf-16-le")) + 16)   # start of the binary block
     raw = fh.read()
 
 u = np.frombuffer(raw, dtype="<u4").reshape(-1, 12)
@@ -48,7 +49,9 @@ V = {c: np.ascontiguousarray(u[:, 2 + i]).view("<f4")
      for i, c in enumerate(VAR_NAMES)}
 
 vout, il1, vin, irh = V["V(vout)"], V["I(L1)"], V["V(vin)"], V["I(Rh)"]
-RL = 6.0                             # load resistor, ohm
+RL = 6.5                             # load resistor, ohm
+VTARGET = 0.8 * (1 + 71.5 / 10)      # feedback divider, 6.52 V
+V90 = round(0.9 * VTARGET, 2)        # t_90 threshold, same as the .meas
 
 # ------------------------------------------------------------------- derived data
 pin = vin * irh                       # W, input power
@@ -62,7 +65,7 @@ m_steady = win(8e-3, 9e-3)
 stats = dict(
     t_on=t[np.argmax(vout > 0.1)],
     vin_on=vin[np.argmax(vout > 0.1)],
-    t_90=t[np.argmax(vout > 5.4)],
+    t_90=t[np.argmax(vout > V90)],
     vout_max=vout.max(),
     il_max=il1.max(),
     vout_avg=vout[m_steady].mean(),
@@ -125,7 +128,7 @@ def x_us(ax):
     ax.xaxis.set_major_formatter(plain_fmt())
 
 # ------------------------------------------------------------- figure management
-SUB = "TPS62933F buck  |  12 V -> 6 V @ 1 A  |  buck_startup.raw  |  2 482 358 pts, 0-9 ms, max step 20 ns"
+SUB = f"TPS62933F buck  |  12 V -> 6.5 V @ 1 A  |  buck_startup.raw  |  {n:,} pts, 0-9 ms, max step 20 ns"
 
 def new_fig(nrows, ncols, figsize, title, heights=None):
     """constrained_layout keeps titles/labels/tick text from colliding."""
@@ -249,7 +252,7 @@ ax.annotate(f"t_on = {stats['t_on']*1e3:.3f} ms  (Vout = 0.1 V)",
             fontsize=8.5, color="#5d6d7e",
             arrowprops=dict(arrowstyle="->", color="#95a5a6", lw=1))
 ax.axvline(stats["t_90"] * 1e3, color="#7f8c8d", ls="--", lw=1)
-ax.annotate(f"t_90 = {stats['t_90']*1e3:.3f} ms  (Vout = 5.4 V)",
+ax.annotate(f"t_90 = {stats['t_90']*1e3:.3f} ms  (Vout = {V90} V)",
             xy=(stats["t_90"] * 1e3, 3.5), xytext=(3.1, 4.6),
             fontsize=8.5, color="#5d6d7e",
             arrowprops=dict(arrowstyle="->", color="#95a5a6", lw=1))
@@ -264,8 +267,8 @@ finish(fig, "01_startup_overview")
 fig, axs = new_fig(2, 1, (11.5, 8.0), "Output voltage - start-up and steady-state ripple",
                     heights=[1.3, 1])
 plot_env(axs[0], t * 1e3, vout, "V(vout)", C["vout"], nbins=1400, lw=1.4)
-axs[0].axhline(6.0, color="#95a5a6", ls=":", lw=1.2)
-axs[0].text(0.15, 6.05, "target 6.000 V", fontsize=8.5, color="#7f8c8d")
+axs[0].axhline(VTARGET, color="#95a5a6", ls=":", lw=1.2)
+axs[0].text(0.15, VTARGET + 0.05, f"target {VTARGET:.3f} V", fontsize=8.5, color="#7f8c8d")
 axs[0].axhline(stats["vout_avg"], color="#c0392b", ls="--", lw=1)
 axs[0].text(0.15, stats["vout_avg"] - 0.30,
             f"steady-state average = {stats['vout_avg']:.4f} V",
@@ -288,7 +291,7 @@ fig, axs = new_fig(2, 1, (11.5, 8.0), "Inductor current - start-up inrush and st
                     heights=[1.3, 1])
 plot_env(axs[0], t * 1e3, il1, "I(L1)  inductor current", C["il"])
 axs[0].axhline(1.0, color="#95a5a6", ls=":", lw=1.2)
-axs[0].text(0.15, 1.04, "1 A load (Rload = 6 ohm)", fontsize=8.5, color="#7f8c8d")
+axs[0].text(0.15, 1.04, "1 A load (Rload = 6.5 ohm)", fontsize=8.5, color="#7f8c8d")
 axs[0].annotate(f"peak = {stats['il_max']:.3f} A",
                 xy=(t[np.argmax(il1)] * 1e3, stats["il_max"]),
                 xytext=(t[np.argmax(il1)] * 1e3 + 0.8, stats["il_max"] - 0.42),
@@ -330,7 +333,7 @@ finish(fig, "04_switch_node")
 fig, axs = new_fig(2, 1, (11.5, 8.0), "Input / output power and converter efficiency",
                     heights=[1.25, 1])
 plot_env(axs[0], t * 1e3, pin, "P(in)  = V(vin) x I(Rh)", C["pin"])
-plot_env(axs[0], t * 1e3, pout, "P(out)  = V(vout)^2 / 6 ohm", C["pout"])
+plot_env(axs[0], t * 1e3, pout, "P(out)  = V(vout)^2 / 6.5 ohm", C["pout"])
 axs[0].set_ylabel("power  [W]")
 axs[0].set_title("Power during start-up", fontsize=10)
 axs[0].set_xlim(0, 9)
@@ -502,6 +505,17 @@ with open(os.path.join(OUT, "index.html"), "w", encoding="utf-8") as fh:
 print("  wrote index.html")
 
 # ============================================================ README
+import re
+LOG = {}
+for line in open(os.path.join(os.path.dirname(RAW), "buck_startup.log"), "rb").read().replace(b"\x00", b"").decode("latin-1").splitlines():
+    m = re.match(r"(\w+): (.*)", line)
+    if not m:
+        continue
+    rest = m.group(2)
+    v = re.search(r"AT\s+([-+0-9.eE]+)", rest) if re.search(r"WHEN|\)=\S+ AT ", rest) else None
+    v = v or re.search(r"=\s*([-+0-9.eE]+)", rest)
+    if v:
+        LOG[m.group(1)] = float(v.group(1))
 md = f"""# Buck converter start-up charts
 
 Charts generated from the LTspice transient run **`../buck_startup.raw`**
@@ -512,7 +526,7 @@ Every chart exists in both **`.png`** (raster preview) and **`.svg`** (vector, r
 selectable text - recommended for reports and printing).
 
 ## Circuit under test
-TPS62933F buck converter, 12 V battery rail -> regulated 6 V into a 6 ohm load (1 A).
+TPS62933F buck converter, 12 V battery rail -> regulated 6.52 V into a 6.5 ohm load (1 A).
 `.tran 0 9m 0 20n`, Gear integration, {n:,} stored points.
 
 ## Charts
@@ -535,17 +549,17 @@ TPS62933F buck converter, 12 V battery rail -> regulated 6 V into a 6 ohm load (
 
 | quantity | value | LTspice `.log` cross-check |
 |---|---|---|
-| t_on (Vout = 0.1 V) | {stats['t_on']*1e3:.4f} ms | 0.6798 ms |
-| V(vin) at t_on | {stats['vin_on']:.4f} V | 8.0613 V |
-| t_90 (Vout = 5.4 V) | {stats['t_90']*1e3:.4f} ms | 4.5440 ms |
-| V(vout) max | {stats['vout_max']:.5f} V | 6.00183 V |
-| V(vout) average | {stats['vout_avg']:.5f} V | 5.99273 V |
-| V(vout) ripple (pk-pk) | {stats['vout_pp']*1e3:.3f} mV | 12.982 mV |
-| I(L1) max | {stats['il_max']:.5f} A | 2.07271 A |
-| I(L1) ripple (pk-pk) | {stats['il_pp']:.4f} A | 0.79460 A |
-| P(in) | {stats['pin']:.4f} W | 6.1346 W |
-| P(out) | {stats['pout']:.4f} W | 5.9855 W |
-| efficiency | {stats['eff']*100:.2f} % | 97.569 % |
+| t_on (Vout = 0.1 V) | {stats['t_on']*1e3:.4f} ms | {LOG['t_on']*1e3:.4f} ms |
+| V(vin) at t_on | {stats['vin_on']:.4f} V | {LOG['vin_on']:.4f} V |
+| t_90 (Vout = {V90} V) | {stats['t_90']*1e3:.4f} ms | {LOG['t_90']*1e3:.4f} ms |
+| V(vout) max | {stats['vout_max']:.5f} V | {LOG['vout_max']:.5f} V |
+| V(vout) average | {stats['vout_avg']:.5f} V | {LOG['vout_avg']:.5f} V |
+| V(vout) ripple (pk-pk) | {stats['vout_pp']*1e3:.3f} mV | {LOG['vout_pp']*1e3:.3f} mV |
+| I(L1) max | {stats['il_max']:.5f} A | {LOG['il_max']:.5f} A |
+| I(L1) ripple (pk-pk) | {stats['il_pp']:.4f} A | {LOG['il_pp']:.4f} A |
+| P(in) | {stats['pin']:.4f} W | {LOG['pin']:.4f} W |
+| P(out) | {stats['pout']:.4f} W | {LOG['pout']:.4f} W |
+| efficiency | {stats['eff']*100:.2f} % | {LOG['eff']*100:.3f} % |
 
 ## How to regenerate
 ```
