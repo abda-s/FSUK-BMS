@@ -832,6 +832,11 @@ Datasheet: `Reference Docs/Power/` (SLUSEA4D).
 
 ### Design
 
+![Buck schematic from Power.SchDoc: +12V in, input caps, EN divider, TPS62933F, bootstrap, soft start, 8.2 uH inductor, feedback divider with Cff, output cap, +6V out](docs/power/buck-schematic.png)
+
+`Power.SchDoc`. RT is left open (500 kHz). The LTspice copy of this circuit is
+in [Simulation](#simulation-ltspice).
+
 Made in TI WEBENCH for 9–16 V in → 6 V at 1 A. The design files are in
 `Reference Docs/Power/WEBENCH TPS62933F (9-16V to 6V 1A)/`. We kept the
 WEBENCH values except where a part wasn't on LCSC or a better one was. The
