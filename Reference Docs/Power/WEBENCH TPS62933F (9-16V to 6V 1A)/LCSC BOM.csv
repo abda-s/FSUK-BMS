@@ -9,7 +9,7 @@ C_ss,Soft start (~5 ms),33nF 50V X7R,0402,FCC0402B333K500AT,FOJAN,C7419416,31140
 L1,Buck inductor,8.2uH shielded; DCR 83mOhm max; Irms 2.33A max; Isat 2.74A (3.0 typ),5x5 mm,ANR5040T8R2M,APV,C7427138,2760,was NIC NPI52P7R8MTRF 7.8uH 18mOhm (not on LCSC); peak 1.46A at 1A load (1.9x margin); DCR loss 86mW at 1A / 10mW at 0.23A
 C_out,Output,47uF 16V X5R,1210,CL32A476KOJNNNE,Samsung,C2932477,57663,same spec
 C_ff,Feed-forward across R_FBT,6.8pF 50V C0G,0402,CL05C6R8CB5NNNC,Samsung,C318598,10900,same value
-R_FBT,Feedback top,64.9k 1%,0402,0402WGF6492TCE,UNI-ROYAL,C26984,34700,same value
+R_FBT,Feedback top,71.5k 1%,0402,0402WGF7152TCE,UNI-ROYAL,C43534,156100,was 64.9k: Vout raised 6.0 V -> 6.52 V so the 5 V LDO gets the 1.5 V headroom its specs assume
 R_FBB,Feedback bottom,10k 1%,0402,0402WGF1002TCE,UNI-ROYAL,C25744,JLCPCB Basic,same value
 R_ENT,EN UVLO top,511k 1%,0402,0402WGF5113TCE,UNI-ROYAL,C64042,198600,was 1.18M (UVLO now 8.0 V on / 7.0 V off)
 R_ENB,EN UVLO bottom,86.6k 1%,0402,0402WGF8662TCE,UNI-ROYAL,C19709,39600,was 169k
