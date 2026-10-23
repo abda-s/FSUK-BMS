@@ -31,10 +31,10 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
 - [x] Daisy-chain transformer selected: Bourns SM91502ALE (see [transformer selection](#daisy-chain-isolation-transformer-selection))
 - [x] Current sensor selected: LEM DHAB S/124 (see [current sensor selection](#current-sensor-selection))
 - [x] `MCU_STM32.SchDoc`: power and config pins
-- [x] `CAN.SchDoc`: CAN1 and CAN2 transceivers, harness
+- [x] `CAN.SchDoc`: one TCAN1042 channel, used twice on `Top.SchDoc` (`CAN1`, `CAN2`), see [Schematic structure](#schematic-structure)
 - [x] `Stack_Interface.SchDoc`: BQ79600-Q1 and isolation transformer, harness
 - [x] `Current_Sense.SchDoc`: DHAB S/124 dividers and supply monitor, harness
-- [x] `Top.SchDoc`: sheet harnesses connected
+- [x] `Top.SchDoc`: every sheet symbol named (`MCU`, `CONN`, `PWR`, `CAN1`, `CAN2`, `STACK`, `ISENSE`, `CHG`, `SDC`) and all sheets wired, including the connectors and the MCU
 - [x] `Charger.SchDoc`: isolated charger STOP signal (opto), see [Charger interface](#charger-interface)
 - [x] `AMS_SDC.SchDoc`: `AMS_OK` 12 V output to the SDC board, see [AMS_OK signal](#ams_ok-signal-to-the-sdc)
 - [x] `Top.SchDoc`: `AMS_SDC` sheet symbol synced, `AMS_OK_MCU` and `CHG_EN` wired to `MCU_STM32.SchDoc`
@@ -46,9 +46,12 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
 - [x] LDOs selected: TI TLV76150DCYR (`+5V`) and TI TLV76133DCYR (`+3V3`), SOT-223, see [LDOs](#ldos-5v-3v3)
 - [x] LV input protection on `Power.SchDoc`: 1 A slow-blow fuse, SS34 reverse-polarity diode, SMBJ16A TVS, see [LV input protection](#lv-input-protection)
 - [x] Power while charging decided: the board runs from a separate battery like the LV battery, through the same `LV_IN` input, see [LV input protection](#lv-input-protection)
+- [x] Connectors chosen: Molex Micro-Fit 3.0 right-angle for J1 (LV, 2×8) and J2 (daisy chain, 2-pin), CONNFLY DS1133-S60BPX RJ12 for J3, vertical 2×5 1.27 mm SWD for J4, see [Connectors](#connectors)
 - [x] `Power.SchDoc`: TPS62933F buck drawn and wired (6.5 V, R_FBT 71.5k), see [Buck converter](#buck-converter-tps62933f)
 - [x] `Power.SchDoc`: TLV76150DCYR and TLV76133DCYR wired with 2.2 µF in/out caps; `+5V` and `+3V3` reach every sheet, see [LDOs](#ldos-5v-3v3)
 - [x] Buck simulations: start-up, load step, 9 / 11 / 16 V input, hot-plug with and without the bulk cap, see [Simulation](#simulation-ltspice) and [More simulations](#more-simulations-load-step-and-input-range)
+- [x] `Connectors.SchDoc`: J1–J4 placed and wired to ports (SWD as a harness), see [Connectors](#connectors)
+- [x] `MCU_STM32.SchDoc`: ports and harnesses for every link on `Top.SchDoc`
 
 ### To do
 
@@ -56,10 +59,14 @@ Schematic:
 
 - [ ] `Power.SchDoc`: add a second 47 µF (C2932477) on the buck output; fixes the loop oscillation at 9 V input in simulation (see [More simulations](#more-simulations-load-step-and-input-range))
 - [ ] `Power.SchDoc`: annotate (designators are still `U?`, `C?`, `R?`)
-- [ ] `Connectors.SchDoc`: LV (feeds `LV_IN`), CAN, sensor, SDC (`AMS_OK`), Reg Bus RJ12 and debug connectors (sheet is still empty)
-- [ ] `MCU_STM32.SchDoc`: pick GPIOs for `AMS_OK_MCU`, `CHG_EN` and `BAL_EN_N`, add the ports / labels on the STM32 pins
-- [ ] Order the RJ12 (6P6C) Reg Bus jack online: not available locally
-- [ ] SWD debug header
+- [ ] `MCU_STM32.SchDoc`: select the STM32 pins in CubeMX and wire them to the harness and port net labels (proposal below); `BAL_EN_N` also needs a pin
+- [ ] Make the sheets more readable: tidy the layout (Connectors around J1 is tight), group each block, add titles
+- [ ] Add notes on the sheets: pin choices on the MCU, TS/LV marking on J2/J3, unused connector pins, why each harness exists
+- [ ] CAN H/L and `ISO_COMH` P/N: differential-pair directives (needs `_P`/`_N` names or the suffix set in Project Options)
+- [ ] CAN TVS (e.g. ESD2CAN24) on `CAN_H`/`CAN_L`, and decide the termination per channel (variant if only one end is terminated)
+- [ ] Annotate the whole project (CAN parts become `U1_CAN1`, `U1_CAN2`, ...)
+- [ ] Order the J3 RJ12 (CONNFLY DS1133-S60BPX, C77859) online: not available locally
+- [ ] Version 2: second 2-pin daisy-chain connector for COML (ring)
 - [ ] Resolve the notes on `Stack_Interface.SchDoc`: second COM port for v1, 0 Ω resistors, cap packages
 - [ ] Verify CAN, ADC and memory specs in CubeMX/datasheet before ordering
 
@@ -110,6 +117,57 @@ Firmware:
 - [ ] SoC estimation
 - [ ] Balancing control (only while `BAL_EN_N` reads low, debounced, and the conditions in [Balancing switch](#balancing-switch) pass)
 - [ ] CAN1 telemetry and CAN2 summary messages
+
+## Schematic structure
+
+Hierarchical design: `Top.SchDoc` only holds sheet symbols and the wires
+between them. Project options: net identifier scope **Hierarchical**,
+**Higher Level Names Take Priority** on, multi-channel designators
+`$Component_$RoomName`.
+
+| Sheet symbol | File | Talks to |
+|---|---|---|
+| `MCU` | `MCU_STM32.SchDoc` | everything below |
+| `CONN` | `Connectors.SchDoc` | J1–J4: `PWR`, `CAN1`, `CAN2`, `SDC`, `ISENSE`, `STACK`, `CHG`, `MCU` (SWD) |
+| `PWR` | `Power.SchDoc` | `LV_IN` from J1 |
+| `CAN1`, `CAN2` | `CAN.SchDoc` (same file twice) | bus to J1, `CAN_MCU` to `MCU` |
+| `STACK` | `Stack_Interface.SchDoc` | `ISO_COMHP/N` to J2, `BQ97600_SPI` to `MCU` |
+| `ISENSE` | `Current_Sense.SchDoc` | `ISENSE_HI/LO` from J1, `ISENSE_ADC` to `MCU` |
+| `CHG` | `Charger.SchDoc` | `REGBUS_STOP` to J3, `CHG_EN` from `MCU` |
+| `SDC` | `AMS_SDC.SchDoc` | `AMS_OK` to J1, `AMS_OK_MCU` from `MCU` |
+
+**Rules we follow:**
+
+- **Harness for grouped logic signals** that always travel together between
+  the same two sheets: `CAN_MCU` (TXD, RXD), `BQ97600_SPI`, `ISENSE_ADC`,
+  `SWD` (SWDIO, SWCLK, SWO, NRST).
+- **Plain ports for differential pairs and single signals:** CAN H/L,
+  `ISO_COMHP/N`, `ISENSE_HI/LO`, `LV_IN`, `AMS_OK`, `REGBUS_STOP`, `CHG_EN`,
+  `AMS_OK_MCU`. A harness would hide the pair and the net names.
+- **Power nets are power ports** (`+12V`, `+5V`, `+3V3`, `GND`,
+  `+5V_REGBUS`, `GND_REGBUS`), global, so they never need a sheet entry.
+- **One sheet for every off-board connector** (`Connectors.SchDoc`), so the
+  cable pinout is on one page and matches [Connectors](#connectors).
+- **CAN is one channel drawn once** and placed twice (`CAN1`, `CAN2`). The
+  Top wires carry net labels `CAN1_H`, `CAN1_L`, `CAN2_H`, `CAN2_L`, which win
+  over the sheet's `CAN_H`/`CAN_L` because of Higher Level Names Take Priority.
+
+### STM32 pin proposal (to confirm in CubeMX)
+
+| Link | Signal | Pin | Function |
+|---|---|---|---|
+| `SWD` | SWDIO / SWCLK / SWO | PA13 / PA14 / PB3 | SWD, SWO trace |
+| `SWD` | NRST | NRST (`MCU_NRST`) | reset |
+| `CAN_MCU` (CAN1) | RXD / TXD | PA11 / PA12 | FDCAN1, AF9 |
+| `CAN_MCU` (CAN2) | RXD / TXD | PB12 / PB13 | FDCAN2, AF9 |
+| `BQ97600_SPI` | SCLK / MISO/TX / MOSI/RX | PA5 / PA6 / PA7 | SPI1 |
+| `BQ97600_SPI` | nCS / NFAULT / nUART/SPI | PA4 / PB0 / PB1 | GPIO |
+| `ISENSE_ADC` | HI / LO / SUPPLY | PC0 / PC1 / PC2 | ADC12_IN6 / IN7 / IN8 |
+| `CHG_EN` | | PC6 | GPIO out |
+| `AMS_OK_MCU` | | PC7 | GPIO out |
+| `BAL_EN_N` | | PC8 (suggested) | GPIO in |
+
+Avoid PB8 (BOOT0 on the G4) and keep PA13, PA14, PB3 free for debug.
 
 ## MCU selection: STM32G474
 
@@ -1362,3 +1420,185 @@ Video: [LDO basics: Power Supply Rejection Ratio (PSRR)](https://www.youtube.com
 Sources: TLV767 datasheet SLVSE84D (PSRR figures). The loop-gain model is
 the standard single-pole simplification, not taken from a specific
 datasheet.
+
+## Connectors
+
+**One main LV connector (J1)** carries everything LV that leaves the board.
+The only other LV connector is the **SWD debug header (J4)**. Two more are
+forced by the rules:
+
+- **EV 4.3.5:** "TS and LVS circuits must be physically segregated such that
+  they are not running through the same conduit or connector, except for
+  interlock circuit connections."
+- So the **daisy chain to the modules (J2)** and the **charger Reg Bus (J3)**
+  can't go in J1:
+  - **Daisy chain:** it comes from the TS side of the isolation transformer
+    and runs to modules at TS potential. That's the conservative reading;
+    worth confirming with the ESA together with the transformer question.
+  - **Reg Bus:** the charger's ground is pack negative.
+
+J1–J3 are **right-angle**: the cable plugs in parallel to the PCB. J4 is only for debugging, so it's a normal vertical header.
+
+| Ref | Connector | Pins | Side | Contents |
+|---|---|---|---|---|
+| J1 | Molex Micro-Fit 3.0, 2×8, right-angle | 16 (14 used) | LV | LV power, CAN1, CAN2, AMS_OK, current sensor |
+| J2 | Molex Micro-Fit 3.0, 2-pin, right-angle | 2 | TS | Daisy chain to the BMS-Modules (COMH) |
+| J3 | CONNFLY DS1133-S60BPX RJ12 6P6C, right-angle | 6 (3 used) | TS | Charger Reg Bus |
+| J4 | 2×5 1.27 mm boxed header, vertical | 10 | LV | SWD debug (ST-LINK) |
+
+### Why Molex Micro-Fit 3.0
+
+| | **Micro-Fit 3.0** (chosen) | TE Deutsch DTM | Molex MX150 (sealed) | JST PH/XH-type |
+|---|---|---|---|---|
+| Right-angle 16-pin header | 430451600, LCSC C277731, $1.53 | DTM13-12PA-Rxxx, C17510017, $26, 4 in stock | not on LCSC | many |
+| Pins per housing | 2–24 | **12 max**, so J1 would need two | up to 20 | many |
+| Current per pin | 8.5 A | 7.5 A | about 8 A | 2–3 A |
+| Sealed | no | yes | yes | no |
+| Temperature | −40 to +105 °C | −55 to +125 °C | −40 to +125 °C | −25 to +85 °C |
+| Latch | positive latch | very robust | very robust | weak, not for a car |
+
+- **It's what comparable BMS hardware uses.**
+  - **foxBMS** (Fraunhofer IISB's open-source BMS) uses Micro-Fit 3.0 as its
+    main connector type.
+  - **Molex** lists Micro-Fit (3.00 mm, 600 V, through-hole) for BMS
+    controller boards.
+  - Sealed families (MX150, DTM) show up on the **outside of battery boxes**,
+    not on the PCB.
+  - Commercial BMSs (Orion BMS 2, EMUS G1) ship pre-made harnesses and don't
+    name the family in their public manuals.
+- **One connector fits all of J1,** with far more current per pin than we
+  need (0.15 A max).
+- **Genuine Molex parts in stock,** cheap, and crimpable with one tool for
+  both J1 and J2.
+- **Through-hole right-angle:** much stronger against cable pull than SMD.
+- **Downside: not sealed.** That's fine inside a closed enclosure. If the
+  board's enclosure needs a sealed connection to the car harness, put a
+  sealed bulkhead connector (MX150 or DTM) on the enclosure wall and wire it
+  inside to J1. Don't put a sealed connector on the PCB.
+
+### J1: main LV connector
+
+<img src="docs/connectors/microfit-2x8-right-angle-header-430451600.jpg" width="260" alt="Molex Micro-Fit 3.0 2x8 right-angle header 430451600">
+<img src="docs/connectors/microfit-2x8-receptacle-430251600.jpg" width="260" alt="Molex Micro-Fit 3.0 2x8 receptacle 430251600">
+
+Board header (left) and cable receptacle (right).
+
+| Part | Molex | LCSC | Stock |
+|---|---|---|---|
+| Board header, 2×8 right-angle, through-hole | 430451600 | C277731 | 670 |
+| Cable receptacle housing, 2×8 | 430251600 | C293527 | 5,035 |
+| Crimp terminal, female, 20–24 AWG | 430300007 | C293530 | 59,665 |
+
+| Pin | Net | Goes to | Notes |
+|---|---|---|---|
+| 1 | `LV_IN` | LV battery (or the charging battery) | 11–16 V, up to 151 mA, into the [input protection](#lv-input-protection) |
+| 2 | GND | LV battery − | |
+| 3 | `CAN1_H` | CAN1 (full telemetry) | Twisted pair with pin 4 |
+| 4 | `CAN1_L` | CAN1 | |
+| 5 | GND | CAN1 reference | |
+| 6 | `CAN2_H` | CAN2 (summary to ECU/dashboard) | Twisted pair with pin 7 |
+| 7 | `CAN2_L` | CAN2 | |
+| 8 | GND | CAN2 reference | |
+| 9 | `AMS_OK` | SDC board input | 12 V = OK, through the 2K2 output resistor |
+| 10 | GND | SDC ground | Return for `AMS_OK` |
+| 11 | `+5V` | Current sensor supply | About 20 mA |
+| 12 | GND | Current sensor ground | |
+| 13 | `ISENSE_HI` | DHAB S/124 output | 0–5 V, ratiometric to pin 11 |
+| 14 | `ISENSE_LO` | DHAB S/124 output | 0–5 V |
+| 15, 16 | — | spare | |
+
+Pin numbers are a proposal; final numbering follows the header's footprint.
+Each function has its own ground next to it, and CAN H/L sit on adjacent
+pins so the twisted pairs stay twisted up to the connector.
+
+### J2: daisy chain (TS side)
+
+<img src="docs/connectors/microfit-2pin-right-angle-header-430450200.jpg" width="220" alt="Molex Micro-Fit 3.0 2-pin right-angle header 430450200">
+
+| Part | Molex | LCSC | Stock |
+|---|---|---|---|
+| Board header, 2-pin right-angle | 430450200 | C122431 | 15,162 |
+| Cable receptacle, 2-pin | 430250200 | C293523 | |
+| Crimp terminal | 430300007 | C293530 | 59,665 |
+
+| Pin | Net | Notes |
+|---|---|---|
+| 1 | `ISO_COMHP` | To the first BMS-Module, after the SM91502AL transformer |
+| 2 | `ISO_COMHN` | Twisted pair with pin 1 |
+
+- **One connector per daisy-chain port.** This version only uses COMH (a
+  line to the modules). Version 2 adds the **COML** port for a ring: the
+  chain comes back from the last module on a second 2-pin connector, so
+  one broken cable doesn't cut off any module. Two separate connectors
+  also mean the two cables can't be swapped by mistake.
+- Same family as J1, so one crimp tool. Place it on the TS side of the
+  board, with the Table 5 spacing to anything LV.
+
+### J3: charger Reg Bus (TS side)
+
+<img src="docs/connectors/rj12-6p6c-right-angle-ds1133-s60bpx.jpg" width="220" alt="CONNFLY DS1133-S60BPX RJ12 6P6C right-angle jack">
+
+CONNFLY DS1133-S60BPX, LCSC C77859: RJ12 **6P6C**, through-hole,
+right-angle, unshielded.
+
+| Spec | Value |
+|---|---|
+| Part number | DS1133-**S**(socket) **6**(6P6C) **0**(gold flash) **B**(black) **P**(PBT) **X**(no ear) |
+| Rating | 1.5 A, 125 VAC |
+| Dielectric withstand | 500 VAC for 1 min, between contacts |
+| Temperature | −40 to +85 °C |
+| Footprint | 6 × Ø0.9 mm holes at 1.02 mm pitch in two staggered rows (2.54 mm apart), 2 × Ø2.3 mm locating pegs 12 mm apart |
+
+The 500 V rating is contact to contact only. TS/LV separation is done by
+the PC817 and the board layout, not by the jack.
+
+| Pin | Net | Notes |
+|---|---|---|
+| 1 | `+5V_REGBUS` | From the charger |
+| 2 | `REGBUS_STOP` (BLACK) | Pulled by the PC817 to stop charging |
+| 4 | `GND_REGBUS` | Charger ground = pack negative (TS) |
+| 3, 5, 6 | NC | |
+
+Pinout from `Reference Docs/Manzanita PFC-20 Charger/` (Reg Bus wiring).
+Datasheet: [C77859](https://www.lcsc.com/datasheet/C77859.pdf).
+
+### J4: SWD debug header
+
+<img src="docs/connectors/swd-2x5-1.27mm-vertical-box-header.jpg" width="220" alt="2x5 1.27 mm vertical boxed header">
+
+hanxia HX JN1.27-2x5P ZZ H4.9, vertical, through-hole, LCSC C42372547 (58,255 in stock).
+It only needs to be reached during debugging, so it doesn't need to be right-angle. It's the
+standard ARM Cortex 10-pin layout, so an ST-LINK V2/V3 plugs straight in, and
+the box keys the cable.
+
+| Pin | Net | STM32G474 |
+|---|---|---|
+| 1 | `+3V3` (VTref) | — |
+| 2 | SWDIO | PA13 |
+| 3, 5, 9 | GND | — |
+| 4 | SWCLK | PA14 |
+| 6 | SWO | PB3 |
+| 7 | KEY (no pin) | — |
+| 8 | NC | — |
+| 10 | nRESET | NRST |
+
+Keep PA13, PA14, PB3 and NRST free when assigning GPIOs.
+
+### Layout notes
+
+- **Board edge:** right-angle connectors (J1–J3) sit on the board edge, mating
+  face just past the outline. Plan the outline around them. J4 can sit
+  anywhere reachable with the board out of its enclosure.
+- **TS vs LV:** J2 and J3 go on the TS side and J1 and J4 on the LV side,
+  with the FSUK Table 5 spacing and TS / LV silkscreen markings (EV 4.3.6).
+- **Mechanical:** use the mounting pegs or tabs for strength against cable
+  pull.
+
+Sources:
+[foxBMS connectors](https://iisb-foxbms.iisb.fraunhofer.de/foxbms/docs/latest/hardware/connectors.html),
+[Molex BESS controller connectors](https://www.molex.com/en-us/industries-applications/battery-energy-storage-systems-bess/bess-controller-connectors),
+[Molex MX150](https://www.molex.com/en-us/products/automotive-connectivity/automotive-pcb-wire-connectors/mx150-connectors),
+[EVWest MX150 BMS pinout](https://www.evwest.com/support/M_150_Pin_Out.pdf),
+[Orion BMS 2 wiring manual](https://www.orionbms.com/manuals/pdf/orionbms2_wiring_manual.pdf),
+FSUK rules EV 4.3.5 (`Reference Docs/FSUK Rules/`). Part numbers and stock
+from LCSC, 2026-10-23. Images: LCSC product photos.
