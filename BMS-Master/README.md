@@ -64,6 +64,7 @@ Schematic:
 - [ ] Add notes on the sheets: pin choices on the MCU, TS/LV marking on J2/J3, unused connector pins, why each harness exists
 - [ ] CAN H/L and `ISO_COMH` P/N: differential-pair directives (needs `_P`/`_N` names or the suffix set in Project Options)
 - [ ] CAN TVS (e.g. ESD2CAN24) on `CAN_H`/`CAN_L`, and decide the termination per channel (variant if only one end is terminated)
+- [ ] `Top.SchDoc`: net labels `CAN1_H`, `CAN1_L`, `CAN2_H`, `CAN2_L` on the CAN wires (nets are `CAN_H_CAN1` etc. without them)
 - [ ] Annotate the whole project (CAN parts become `U1_CAN1`, `U1_CAN2`, ...)
 - [ ] Order the J3 RJ12 (CONNFLY DS1133-S60BPX, C77859) online: not available locally
 - [ ] Version 2: second 2-pin daisy-chain connector for COML (ring)
@@ -125,6 +126,8 @@ between them. Project options: net identifier scope **Hierarchical**,
 **Higher Level Names Take Priority** on, multi-channel designators
 `$Component_$RoomName`.
 
+![Top.SchDoc: sheet symbols and the wires and harnesses between them](docs/top-level.png)
+
 | Sheet symbol | File | Talks to |
 |---|---|---|
 | `MCU` | `MCU_STM32.SchDoc` | everything below |
@@ -149,8 +152,10 @@ between them. Project options: net identifier scope **Hierarchical**,
 - **One sheet for every off-board connector** (`Connectors.SchDoc`), so the
   cable pinout is on one page and matches [Connectors](#connectors).
 - **CAN is one channel drawn once** and placed twice (`CAN1`, `CAN2`). The
-  Top wires carry net labels `CAN1_H`, `CAN1_L`, `CAN2_H`, `CAN2_L`, which win
-  over the sheet's `CAN_H`/`CAN_L` because of Higher Level Names Take Priority.
+  wiring compiles correctly, but the nets come out as `CAN_H_CAN1`,
+  `CAN_L_CAN1`, ... To get `CAN1_H`, `CAN1_L`, `CAN2_H`, `CAN2_L`, put those
+  net labels on the Top wires; they win over the sheet's `CAN_H`/`CAN_L`
+  because of Higher Level Names Take Priority.
 
 ### STM32 pin proposal (to confirm in CubeMX)
 
