@@ -1,6 +1,6 @@
 * ============================================================================
 * TPS62933F_LTspice.lib - TI TPS62933F_TRANS (SLUM859, Final 1.00) patched to run in LTspice.
-* Original: Reference Docs/Power/TPS62933F PSpice Model (SLUM859)/.../TPS62933F_TRANS.lib
+* Original: Reference Docs/Master/Power/TPS62933F PSpice Model (SLUM859)/.../TPS62933F_TRANS.lib
 * Patches (numerical only):
 *  1. Latch/flip-flop clamp diodes d_d1: n=0.01 -> 1   (near-vertical diodes stall LTspice)
 *  2. D_DIDEAL / D_DIDEAL2: n=0.001 -> 0.1

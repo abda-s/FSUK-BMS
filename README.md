@@ -1,28 +1,51 @@
 # FSUK-BMS
 
-Battery Management System hardware for the FSUK electric accumulator: a 16-series
-cell-monitor module (`BMS-Module`, built with the TI BQ79616) daisy-chained back
-to a central controller board (`BMS-Master`, built with the TI BQ79600-Q1 bridge
-and an STM32 MCU that talks CAN to the car's ECU).
+BMS (AMS in the FSUK rules) for a Formula Student UK electric car.
+
+- Pack: 96S6P, 403 V max.
+- `BMS-Module` (×6): BQ79616, 16 cells each, cell voltages, temperatures, balancing.
+- `BMS-Master` (×1): BQ79600 + STM32G474 on the LV side.
+
+## Block diagram
+
+![System block diagram](Docs/system-block-diagram.svg)
+
+- The modules are connected in an isolated daisy chain (transformer-coupled
+  twisted pair), addresses 1–6. Module 1 = cells 1–16, module 6 = cells 81–96.
+- On the master, the BQ79600 bridges the daisy chain to SPI for the STM32.
+- The STM32 also reads the pack current (LEM DHAB S/124).
+- Outputs from the master:
+  - `AMS_OK` (12 V) to the SDC board. Low opens the SDC.
+  - CAN1: full telemetry. CAN2: summary to the ECU/dashboard.
+  - Charger stop signal on the Reg Bus (opto-isolated).
+- TS/LV isolation points: daisy-chain transformer, current sensor, charger opto.
+
+## Boards
+
+| Board | Main parts | Status | Docs |
+|---|---|---|---|
+| `BMS-Master` | STM32G474, BQ79600-Q1, 2× TCAN1042, DHAB S/124 input, `AMS_OK` driver, charger interface, 12 V → 6.5 V → 5 V / 3.3 V | Schematic in progress | [README](BMS-Master/README.md), [schematic PDF](BMS-Master/BMS-Master_Schematics.pdf) |
+| `BMS-Module` | BQ79616, cell sense filters, balancing, thermistor mux, daisy chain | Schematic in progress | [schematic PDF](BMS-Module/BMS-Module_Schematics.pdf) |
+
+Design decisions are documented in each board's `README.md` (one `##`
+section per decision). `BMS-Module` has no README yet.
 
 ## Repo layout
 
 ```
 FSUK-BMS/
-├── BMS-Master/       Altium project — controller board (STM32, BQ79600-Q1, CAN)
-├── BMS-Module/       Altium project — cell-monitor board (BQ79616), built x6
-└── Reference Docs/   Datasheets, app notes, and the TIDA-010271 reference design
+├── BMS-Master/       Altium project: master board
+│   ├── Sheets/       Schematic sheets (Top.SchDoc = overview)
+│   ├── docs/         README images
+│   └── sim/          LTspice simulations
+├── BMS-Module/       Altium project: module board
+├── Docs/             Git for Altium guide, block diagram
+└── Reference Docs/   Datasheets, app notes, rules (Shared/, Master/, Module/);
+                      start with Reference Docs/README.md
 ```
 
-`BMS-Master` and `BMS-Module` are two **separate, standalone Altium projects** —
-open each one on its own (no shared workspace file). They're separate boards with
-separate BOMs and separate release cycles, so this keeps things simple.
-
-**Design documentation lives in each board's own `README.md`**
-(`BMS-Master/README.md`, `BMS-Module/README.md`) — block diagram and a `##`
-section per major design decision (MCU selection, etc.). Add new decisions as
-a new section there rather than a new standalone file, so each board has one
-place anyone can land on and read top to bottom.
+`BMS-Master` and `BMS-Module` are separate Altium projects. Open each one on
+its own (no shared workspace file).
 
 ## One-time setup (do this before opening anything in Altium)
 

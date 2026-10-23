@@ -24,14 +24,14 @@ tidmc07.zip
 
 # Cloned third-party open-source BMS repos — local study reference only.
 # Not ours to redistribute (unclear/no license on some of them), and large
-# (100-200MB+ each). See Reference Docs/Open-Source BMS Projects/README.md
+# (100-200MB+ each). See Reference Docs/Shared/Open-Source BMS Projects/README.md
 # for what's there and how to re-clone.
-Reference Docs/Open-Source BMS Projects/*/
+Reference Docs/Shared/Open-Source BMS Projects/*/
 
 # OS junk
 Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Raw datasheet downloads before renaming (duplicates of the PDFs in Reference Docs/LDO/)
-Reference Docs/LDO/_raw/
+# Raw datasheet downloads before renaming (duplicates of the PDFs in Reference Docs/Master/LDO/)
+Reference Docs/Master/LDO/_raw/

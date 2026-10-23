@@ -81,7 +81,7 @@ work under the same license).
 ## One-time setup if you don't have these yet
 
 Run the `git clone` commands above from inside this folder
-(`Reference Docs/Open-Source BMS Projects/`). They won't show up as changes
+(`Reference Docs/Shared/Open-Source BMS Projects/`). They won't show up as changes
 in `git status` — they're gitignored on purpose.
 
 ## Note

@@ -86,7 +86,7 @@ SDC team (ask before freezing the schematic):
 
 Next PCB version (v2):
 
-- External watchdog: TI TPS3431SDRBR (LCSC C702145), 200 ms timeout, WDO to NRST and AND-gated with `AMS_OK`. Datasheet in `Reference Docs/Watchdog/`. v1 uses the STM32 IWDG only.
+- External watchdog: TI TPS3431SDRBR (LCSC C702145), 200 ms timeout, WDO to NRST and AND-gated with `AMS_OK`. Datasheet in `Reference Docs/Master/Watchdog/`. v1 uses the STM32 IWDG only.
 - SDC readback input (BMS sees whether the SDC is closed)
 - Heartbeat `AMS_OK` (toggling signal, so a stuck pin can't hold the SDC closed)
 
@@ -202,7 +202,7 @@ op-amps/PGAs, most ADCs, deepest CAN buffering.
 STM32G474, G473, G491, G431, H503, H523/H563, H723/H743, F446, F405, F413,
 F429/F407, G0B1, F303 — spread across ST's current CAN-capable families, plus
 F303 as a real precedent (ENNOID-BMS uses it, see
-`Reference Docs/Open-Source BMS Projects/README.md`).
+`Reference Docs/Shared/Open-Source BMS Projects/README.md`).
 
 ### Comparison matrix
 
@@ -261,10 +261,10 @@ LQFP64 — enough pins for everything above, with spares for SWD/debug.
 ### Sources
 
 - [Google Sheet — stm32_requirements_matrix](https://docs.google.com/spreadsheets/d/1AgWugIduUw6VQksLgAckyC9UT4bKEkQZ88cZwor0tiw/edit?usp=sharing)
-- `Reference Docs/STM32 MCU/` — STM32G474xB/xC/xE datasheet (DS12288)
-- `Reference Docs/BQ796xx BMS/` — BQ79600-Q1 datasheet and app notes
-- `Reference Docs/Open-Source BMS Projects/README.md` — real-world STM32 MCU precedent
-- `Reference Docs/Current Sensor/` — LEM DHAB S/124 datasheet (the Hall-effect current sensor referenced in requirements 6-7 above)
+- `Reference Docs/Master/STM32 MCU/` — STM32G474xB/xC/xE datasheet (DS12288)
+- `Reference Docs/Master/BQ79600/` — BQ79600-Q1 datasheet, design recommendations, software reference, bring-up
+- `Reference Docs/Shared/Open-Source BMS Projects/README.md` — real-world STM32 MCU precedent
+- `Reference Docs/Master/Current Sensor/` — LEM DHAB S/124 datasheet (the Hall-effect current sensor referenced in requirements 6-7 above)
 
 ## CAN transceiver selection
 
@@ -282,7 +282,7 @@ SOIC-8 `TCAN1462VDRQ1` before starting v2**, and switch to it if available.
 
 ### Isolation: not required
 
-Checked against the actual rulebooks (`Reference Docs/FSUK Rules/`), not
+Checked against the actual rulebooks (`Reference Docs/Shared/FSUK Rules/`), not
 assumption. FSG rule **EV 4.3.1**: "The entire TS and LVS must be galvanically
 isolated" — this is a TS↔LVS boundary rule. Both CAN buses here are LVS-side
 only (STM32 ↔ ECU/dashboard), already downstream of the one isolation
@@ -302,7 +302,7 @@ mean what it implies.
 | Automotive-grade (AEC-Q100) | Board sees vibration, heat near HV equipment, and electrical noise — not a bench/lab environment. |
 
 Four candidates compared, specs pulled directly from each manufacturer's
-datasheet (`Reference Docs/CAN Transceivers/`):
+datasheet (`Reference Docs/Master/CAN Transceivers/`):
 
 | | TCAN1462V-Q1 | TCAN1042V-Q1 | TJA1057 | MCP2562FD |
 |---|---|---|---|---|
@@ -329,9 +329,9 @@ because the SIC reasoning changed.
 
 ### Sources
 
-- `Reference Docs/CAN Transceivers/` — datasheets for all four candidates
-- `Reference Docs/FSUK Rules/` — FSUK and FSG rulebooks (isolation requirement check)
-- `Reference Docs/Open-Source BMS Projects/FSAE_LSU_BMS/` — real-world CAN wiring reference (and the `ISO_CAN` naming caveat above)
+- `Reference Docs/Master/CAN Transceivers/` — datasheets for all four candidates
+- `Reference Docs/Shared/FSUK Rules/` — FSUK and FSG rulebooks (isolation requirement check)
+- `Reference Docs/Shared/Open-Source BMS Projects/FSAE_LSU_BMS/` — real-world CAN wiring reference (and the `ISO_CAN` naming caveat above)
 
 ## Daisy-chain isolation transformer selection
 
@@ -378,7 +378,7 @@ because it is the TS/LV barrier:
 
 ### Candidates compared
 
-All values from each part's datasheet in `Reference Docs/BMS Isolation Transformers/`.
+All values from each part's datasheet in `Reference Docs/Shared/BMS Isolation Transformers/`.
 
 | | **SM91502AL** (Bourns) | HMU1228NL (Pulse) | HM2147NL (Pulse) |
 |---|---|---|---|
@@ -451,10 +451,10 @@ test, which is well above the 1209 Vrms required.
 
 ### Sources
 
-- `Reference Docs/BQ796xx BMS/Application Notes/BQ79616-Q1 Daisy Chain Communications (slvaep4).pdf` — Section 5.1, Table 5-1
-- `Reference Docs/BMS Isolation Transformers/` — datasheets for SM91502AL, HMU1228NL, the Pulse BM101 family (HM2147NL), and CND-tek CB0603S
-- `Reference Docs/BQ796xx BMS/TIDA-010271 Reference Design/` — uses HMU1228NL
-- `Reference Docs/FSUK Rules/FSG-Rules_2026_v1.1.pdf` — EV 1.2.1, EV 4.3.6 and Table 5
+- `Reference Docs/Shared/BQ796xx/BQ79616-Q1 Daisy Chain Communications (slvaep4).pdf` — Section 5.1, Table 5-1
+- `Reference Docs/Shared/BMS Isolation Transformers/` — datasheets for SM91502AL, HMU1228NL, the Pulse BM101 family (HM2147NL), and CND-tek CB0603S
+- `Reference Docs/Module/TIDA-010271 Reference Design/` — uses HMU1228NL
+- `Reference Docs/Shared/FSUK Rules/FSG-Rules_2026_v1.1.pdf` — EV 1.2.1, EV 4.3.6 and Table 5
 
 ## Current sensor selection
 
@@ -603,7 +603,7 @@ the isolation barrier and the sensor never touches TS potential**; the housing
 is a second layer. This is our interpretation, so it needs FSUK's written
 confirmation.
 
-The cable is Jainson NBR rubber welding cable, orange (`Reference Docs/TS
+The cable is Jainson NBR rubber welding cable, orange (`Reference Docs/Master/TS
 Cable/`): 600 V nominal, 2500 V test, −30 to +90 °C, which also meets EV 4.5.2
 (insulation rated for max TS voltage) and EV 4.5.3 (≥ 85 °C). The datasheet
 doesn't say whether 600 V is AC or DC.
@@ -648,9 +648,9 @@ datasheet gives no insulation figures at all.
 
 ### Sources
 
-- `Reference Docs/Current Sensor/` — DHAB S/124 (v5), CAB-SF 500-C/SP1, HCSO-1W datasheets
-- `Reference Docs/TS Cable/Jainson NBR Welding Cable Datasheet.pdf`
-- `Reference Docs/FSUK Rules/` — FSG 2026 v1.1 (EV 1.2.1, EV 2.2, EV 4.3.5, EV 4.5, EV 5.8, T 11.6, T 11.9) and FSUK 2026 supplementary
+- `Reference Docs/Master/Current Sensor/` — DHAB S/124 (v5), CAB-SF 500-C/SP1, HCSO-1W datasheets
+- `Reference Docs/Master/TS Cable/Jainson NBR Welding Cable Datasheet.pdf`
+- `Reference Docs/Shared/FSUK Rules/` — FSG 2026 v1.1 (EV 1.2.1, EV 2.2, EV 4.3.5, EV 4.5, EV 5.8, T 11.6, T 11.9) and FSUK 2026 supplementary
 - [LEM CAB 500-C/SPx datasheet v4](https://www.lem.com/sites/default/files/products_datasheets/cab_500-c_spx_public_datasheet_v4.pdf), [Isabellenhütte IVT-S datasheet](https://www.isabellenhuette.com/hubfs/Files/Data-sheets/IVT-S.pdf?hsLang=en)
 - [FS Czech 2025 EV inspection sheet](https://fsczech.cz/wp-content/uploads/2025/07/FSCZ25_InspectionSheet_EV.pdf) — isolation barrier checks
 - [FSN 2022 accumulator inspection checklist](https://www.formula-student.nl/wp-content/uploads/2022/07/FSN-2022-Scrutineering-System-Accu-Inspection-Master.pdf) — current sensor disconnect test
@@ -670,7 +670,7 @@ The BMS stops the Manzanita Micro PFC charger through the Reg Bus BLACK line
 
 This is the soft stop. The hard stop is the AMS opening the charging shutdown circuit (EV 7.2).
 
-Sources: `Reference Docs/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiring), `Reference Docs/Optocouplers/PC817 Datasheet.pdf`
+Sources: `Reference Docs/Master/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiring), `Reference Docs/Master/Optocouplers/PC817 Datasheet.pdf`
 
 ## AMS_OK signal to the SDC
 
@@ -758,15 +758,15 @@ polarity is high = OK.
 
 **v2:** SDC readback input, heartbeat `AMS_OK`, external watchdog.
 
-Sources (`Reference Docs/AMS_OK Driver/`):
+Sources (`Reference Docs/Master/AMS_OK Driver/`):
 - onsemi AND9093, Using MOSFETs in Load Switch Applications: Fig. 3 is this circuit (P-channel switch, small NMOS level shift)
 - TI SLVAES1A: a high-side N-channel MOSFET needs a bootstrap or charge pump
 - AO3401A datasheet: V_GS max ±12 V, V_GS(th) −0.5 to −1.3 V
 - AO3400A datasheet: V_GS(th) 0.65–1.45 V, C_iss 630 pF, C_rss 50 pF, I_GSS ±100 nA
 - 2N7002 datasheets (Diodes Inc, Hongjiacheng): V_GS(th) up to 2.5 V, why it was replaced
-- STM32G474 datasheet DS12288, Tables 54–55 (`Reference Docs/STM32 MCU/`)
+- STM32G474 datasheet DS12288, Tables 54–55 (`Reference Docs/Master/STM32 MCU/`)
 - UNI-ROYAL 0805W8F2201T5E 2.2 kΩ 125 mW: [LCSC C17520](https://www.lcsc.com/product-detail/C17520.html)
-- FSG Rules 2026 v1.1, T 11.9 (`Reference Docs/FSUK Rules/`)
+- FSG Rules 2026 v1.1, T 11.9 (`Reference Docs/Shared/FSUK Rules/`)
 
 ## Balancing switch
 
@@ -798,7 +798,7 @@ Balancing works with the charger unplugged and stops when the spread closes.
   footprint has them.
 - **Firmware:** read `BAL_EN_N` a few times before acting (debounce).
 
-Source: `Reference Docs/Balancing Switch/ALPS SSSS811101 Datasheet.pdf`
+Source: `Reference Docs/Master/Balancing Switch/ALPS SSSS811101 Datasheet.pdf`
 
 ## Power budget
 
@@ -970,7 +970,7 @@ protection. No change to the input stage.
 
 Sources: Littelfuse 0452 series and SMBJ series ratings from LCSC listings
 (C44669, C151254); SS34 ratings from LCSC C8678; SMBJ datasheet in
-`Reference Docs/Power/`. Simulation results from the files above.
+`Reference Docs/Master/Power/`. Simulation results from the files above.
 
 ## Buck converter: TPS62933F
 
@@ -988,7 +988,7 @@ Sources: Littelfuse 0452 series and SMBJ series ratings from LCSC listings
 - 0.8 V reference.
 - Not AEC-Q100. That's acceptable for v1.
 
-Datasheet: `Reference Docs/Power/` (SLUSEA4D).
+Datasheet: `Reference Docs/Master/Power/` (SLUSEA4D).
 
 ### Why this buck
 
@@ -1053,7 +1053,7 @@ considered the other members of our part's family.
 
 Sources: TPS6293x datasheet SLUSEA4D (Features, Electrical Characteristics),
 LMR51430 datasheet SLUSEF4A (Features, Device Comparison, Absolute Maximum
-Ratings, Electrical Characteristics), both in `Reference Docs/Power/`.
+Ratings, Electrical Characteristics), both in `Reference Docs/Master/Power/`.
 Load currents from [Power budget](#power-budget).
 
 ### Design
@@ -1064,7 +1064,7 @@ Load currents from [Power budget](#power-budget).
 in [Simulation](#simulation-ltspice).
 
 Made in TI WEBENCH for 9–16 V in → 6 V at 1 A, then raised to 6.5 V by changing R_FBT (see the BOM table). The design files are in
-`Reference Docs/Power/WEBENCH TPS62933F (9-16V to 6V 1A)/`. We kept the
+`Reference Docs/Master/Power/WEBENCH TPS62933F (9-16V to 6V 1A)/`. We kept the
 WEBENCH values except where a part wasn't on LCSC or a better one was. The
 final list is `LCSC BOM.csv` in that folder.
 
@@ -1115,7 +1115,7 @@ Files are in [`sim/buck/`](sim/buck/):
 ![LTspice schematic: battery and harness (Lh, Rh), input caps, UVLO divider, TPS62933F, bootstrap, L1, output caps, feedback with Cff, 6 ohm load](sim/buck/buck_startup_schematic.svg)
 
 **Model.** TI's `TPS62933F_TRANS` PSpice transient model (SLUM859,
-`Reference Docs/Power/TPS62933F PSpice Model (SLUM859)/`). It models soft
+`Reference Docs/Master/Power/TPS62933F PSpice Model (SLUM859)/`). It models soft
 start, UVLO/EN, FCCM, current-mode control, the bootstrap, and over-current
 and over/under-voltage protection. It does **not** model quiescent current or
 temperature.
@@ -1252,7 +1252,7 @@ per the datasheet's 2.2 µF nominal C_OUT and 1 µF nominal C_IN.
 The datasheet never prints "TLV76133 = 3.3 V" in one line. The voltage is
 coded into the part number, and the code is explained in a separate table.
 Page numbers below are for the TLV761 datasheet, revision D (English
-SBVS349D and Chinese ZHCSKS3D, both in `Reference Docs/LDO/`):
+SBVS349D and Chinese ZHCSKS3D, both in `Reference Docs/Master/LDO/`):
 
 - **Page 19, section 8.1.1, Table 8-1 "Available Options"** (device
   nomenclature). The format is `TLV761 abxxxy`: "ab is the nominal output
@@ -1289,7 +1289,7 @@ describes the whole family. That's why it's easy to miss.
 
 ### Candidates
 
-All datasheets are in `Reference Docs/LDO/`.
+All datasheets are in `Reference Docs/Master/LDO/`.
 
 | Part | Input (operating) | Fixed 5 V and 3.3 V | Current | Accuracy over temp | PSRR, highest frequency given | Package | Result |
 |---|---|---|---|---|---|---|---|
@@ -1356,7 +1356,7 @@ take 15–18 V but need about 1.2 V of dropout, more than the 1 V we have.
 
 Sources: TLV761 datasheet SBVS349D (Recommended Operating Conditions,
 Electrical Characteristics, Thermal Information, Pin Functions); the other
-datasheets in `Reference Docs/LDO/`; TPS7A88 figures from the
+datasheets in `Reference Docs/Master/LDO/`; TPS7A88 figures from the
 [TI product page](https://www.ti.com/product/TPS7A88). Stock from LCSC,
 2026-10-23.
 
@@ -1564,7 +1564,7 @@ the PC817 and the board layout, not by the jack.
 | 4 | `GND_REGBUS` | Charger ground = pack negative (TS) |
 | 3, 5, 6 | NC | |
 
-Pinout from `Reference Docs/Manzanita PFC-20 Charger/` (Reg Bus wiring).
+Pinout from `Reference Docs/Master/Manzanita PFC-20 Charger/` (Reg Bus wiring).
 Datasheet: [C77859](https://www.lcsc.com/datasheet/C77859.pdf).
 
 ### J4: SWD debug header
@@ -1605,5 +1605,5 @@ Sources:
 [Molex MX150](https://www.molex.com/en-us/products/automotive-connectivity/automotive-pcb-wire-connectors/mx150-connectors),
 [EVWest MX150 BMS pinout](https://www.evwest.com/support/M_150_Pin_Out.pdf),
 [Orion BMS 2 wiring manual](https://www.orionbms.com/manuals/pdf/orionbms2_wiring_manual.pdf),
-FSUK rules EV 4.3.5 (`Reference Docs/FSUK Rules/`). Part numbers and stock
+FSUK rules EV 4.3.5 (`Reference Docs/Shared/FSUK Rules/`). Part numbers and stock
 from LCSC, 2026-10-23. Images: LCSC product photos.
