@@ -1,13 +1,48 @@
 # BMS-Master
 
-Controller board for the FSUK accumulator. Bridges to the daisy-chained
-cell-monitor stack (`BMS-Module`, x6) via a BQ79600-Q1, runs the safety logic
-(limit checks, SoC estimation, balancing control, fault latch), and talks two
-CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
+Controller board of the BMS. It sits on the LV side and:
+
+- reads the six `BMS-Module`s (96 cells, temperatures) through a BQ79600-Q1
+  bridge on the daisy chain,
+- reads the pack current (LEM DHAB S/124),
+- runs the limit checks, SoC estimation, balancing control and fault latch,
+- drives `AMS_OK` to the SDC board, stops the charger, and sends CAN1 (full
+  telemetry) and CAN2 (summary to the ECU/dashboard).
+
+New to the project: read the [root README](../README.md) and
+[`Reference Docs/README.md`](../Reference%20Docs/README.md) first. The
+schematic is in [`BMS-Master_Schematics.pdf`](BMS-Master_Schematics.pdf).
+
+## Contents
+
+Each section explains one part of the board: what was chosen, why, and the
+sources. The Altium sheet is in brackets.
+
+- [Block diagram](#block-diagram)
+- [Schematic structure](#schematic-structure): how the sheets connect (`Top.SchDoc`)
+- MCU
+  - [MCU selection: STM32G474](#mcu-selection-stm32g474) (`MCU_STM32.SchDoc`)
+  - [Balancing switch](#balancing-switch) (`MCU_STM32.SchDoc`)
+- Daisy chain to the modules
+  - [Isolation transformer](#daisy-chain-isolation-transformer-selection) (`Stack_Interface.SchDoc`)
+- CAN
+  - [CAN transceiver](#can-transceiver-selection) (`CAN.SchDoc`)
+- Current measurement
+  - [Current sensor](#current-sensor-selection) (`Current_Sense.SchDoc`)
+- Outputs to the car
+  - [`AMS_OK` signal to the SDC](#ams_ok-signal-to-the-sdc) (`AMS_SDC.SchDoc`)
+  - [Charger interface](#charger-interface) (`Charger.SchDoc`)
+- Power (`Power.SchDoc`)
+  - [Power budget](#power-budget)
+  - [LV input protection](#lv-input-protection)
+  - [Buck converter: TPS62933F](#buck-converter-tps62933f)
+  - [LDOs (+5V, +3V3)](#ldos-5v-3v3)
+- [Connectors](#connectors) (`Connectors.SchDoc`)
+- [Progress](#progress): what's done and the to-do list
 
 ## Block diagram
 
-![BMS-Master Block Diagram](block-diagram.png)
+![BMS-Master block diagram](docs/block-diagram.svg)
 
 - SPI to the **BQ79600-Q1 bridge** (plus `SPI_RDY` and `NFAULT` interrupts),
   reading the daisy-chained cell-monitor stack.
@@ -20,104 +55,8 @@ CAN buses — full telemetry, and a summarized feed to the ECU/dashboard.
   **CAN2**: summarized state (SoC, max cell V, max temp, fault code) to
   ECU/dashboard.
 - Drives the **isolated charger regulation bus** (opto STOP signal).
-- Watched by an **external watchdog** that opens the relay if the MCU hangs.
-
-## Progress
-
-### Done
-
-- [x] MCU selected: STM32G474, LQFP64 (see [MCU selection](#mcu-selection-stm32g474))
-- [x] CAN transceiver selected: TCAN1042V-Q1 for v1 (see [CAN transceiver selection](#can-transceiver-selection))
-- [x] Daisy-chain transformer selected: Bourns SM91502ALE (see [transformer selection](#daisy-chain-isolation-transformer-selection))
-- [x] Current sensor selected: LEM DHAB S/124 (see [current sensor selection](#current-sensor-selection))
-- [x] `MCU_STM32.SchDoc`: power and config pins
-- [x] `CAN.SchDoc`: one TCAN1042 channel, used twice on `Top.SchDoc` (`CAN1`, `CAN2`), see [Schematic structure](#schematic-structure)
-- [x] `Stack_Interface.SchDoc`: BQ79600-Q1 and isolation transformer, harness
-- [x] `Current_Sense.SchDoc`: DHAB S/124 dividers and supply monitor, harness
-- [x] `Top.SchDoc`: every sheet symbol named (`MCU`, `CONN`, `PWR`, `CAN1`, `CAN2`, `STACK`, `ISENSE`, `CHG`, `SDC`) and all sheets wired, including the connectors and the MCU
-- [x] `Charger.SchDoc`: isolated charger STOP signal (opto), see [Charger interface](#charger-interface)
-- [x] `AMS_SDC.SchDoc`: `AMS_OK` 12 V output to the SDC board, see [AMS_OK signal](#ams_ok-signal-to-the-sdc)
-- [x] `Top.SchDoc`: `AMS_SDC` sheet symbol synced, `AMS_OK_MCU` and `CHG_EN` wired to `MCU_STM32.SchDoc`
-- [x] Charger opto PC817B checked against EV 1.2.1: passes, kept (see [Charger interface](#charger-interface))
-- [x] Transformer marked "same part on both ends" on the schematic
-- [x] Balancing master switch on `MCU_STM32.SchDoc`, see [Balancing switch](#balancing-switch)
-- [x] Power budget, see [Power budget](#power-budget)
-- [x] Buck selected and designed: TPS62933F, 6.5 V 1 A, LCSC BOM; start-up simulated in LTspice, see [Buck converter](#buck-converter-tps62933f)
-- [x] LDOs selected: TI TLV76150DCYR (`+5V`) and TI TLV76133DCYR (`+3V3`), SOT-223, see [LDOs](#ldos-5v-3v3)
-- [x] LV input protection on `Power.SchDoc`: 1 A slow-blow fuse, SS34 reverse-polarity diode, SMBJ16A TVS, see [LV input protection](#lv-input-protection)
-- [x] Power while charging decided: the board runs from a separate battery like the LV battery, through the same `LV_IN` input, see [LV input protection](#lv-input-protection)
-- [x] Connectors chosen: Molex Micro-Fit 3.0 right-angle for J1 (LV, 2×8) and J2 (daisy chain, 2-pin), CONNFLY DS1133-S60BPX RJ12 for J3, vertical 2×5 1.27 mm SWD for J4, see [Connectors](#connectors)
-- [x] `Power.SchDoc`: TPS62933F buck drawn and wired (6.5 V, R_FBT 71.5k), see [Buck converter](#buck-converter-tps62933f)
-- [x] `Power.SchDoc`: TLV76150DCYR and TLV76133DCYR wired with 2.2 µF in/out caps; `+5V` and `+3V3` reach every sheet, see [LDOs](#ldos-5v-3v3)
-- [x] Buck simulations: start-up, load step, 9 / 11 / 16 V input, hot-plug with and without the bulk cap, see [Simulation](#simulation-ltspice) and [More simulations](#more-simulations-load-step-and-input-range)
-- [x] `Connectors.SchDoc`: J1–J4 placed and wired to ports (SWD as a harness), see [Connectors](#connectors)
-- [x] `MCU_STM32.SchDoc`: ports and harnesses for every link on `Top.SchDoc`
-
-### To do
-
-Schematic:
-
-- [ ] `Power.SchDoc`: add a second 47 µF (C2932477) on the buck output; fixes the loop oscillation at 9 V input in simulation (see [More simulations](#more-simulations-load-step-and-input-range))
-- [ ] `Power.SchDoc`: annotate (designators are still `U?`, `C?`, `R?`)
-- [ ] `MCU_STM32.SchDoc`: select the STM32 pins in CubeMX and wire them to the harness and port net labels (proposal below); `BAL_EN_N` also needs a pin
-- [ ] Make the sheets more readable: tidy the layout (Connectors around J1 is tight), group each block, add titles
-- [ ] Add notes on the sheets: pin choices on the MCU, TS/LV marking on J2/J3, unused connector pins, why each harness exists
-- [ ] CAN H/L and `ISO_COMH` P/N: differential-pair directives (needs `_P`/`_N` names or the suffix set in Project Options)
-- [ ] CAN TVS (e.g. ESD2CAN24) on `CAN_H`/`CAN_L`, and decide the termination per channel (variant if only one end is terminated)
-- [ ] `Top.SchDoc`: net labels `CAN1_H`, `CAN1_L`, `CAN2_H`, `CAN2_L` on the CAN wires (nets are `CAN_H_CAN1` etc. without them)
-- [ ] Annotate the whole project (CAN parts become `U1_CAN1`, `U1_CAN2`, ...)
-- [ ] Order the J3 RJ12 (CONNFLY DS1133-S60BPX, C77859) online: not available locally
-- [ ] Version 2: second 2-pin daisy-chain connector for COML (ring)
-- [ ] Resolve the notes on `Stack_Interface.SchDoc`: second COM port for v1, 0 Ω resistors, cap packages
-- [ ] Verify CAN, ADC and memory specs in CubeMX/datasheet before ordering
-
-Power, understanding and bench checks:
-
-- [ ] Read Erickson & Maksimović, *Fundamentals of Power Electronics* (2nd ed.), chapters 2 and 3, then check the buck's L and C_out against my own calculation (see the note in [Design](#design))
-- [ ] Bench: ripple on `+5V` and `+3V3` under 0.4 mV p-p (scope AC-coupled, 20 MHz limit)
-- [ ] Bench: drop the input to 9 V and check the buck switches steadily (SW and output on a scope); raise the UVLO to ~10 V if not
-- [ ] Bench: `+5V` powers up cleanly into the real board (TLV761 foldback current limit)
-- [ ] Bench: hot-plug the LV supply a few times; the fuse must not blow on inrush
-
-SDC team (ask before freezing the schematic):
-
-- [ ] Send the [`AMS_OK` interface values](#interface-to-the-sdc-board) (12 V = OK, 10k–100k pull-down, ~6 V threshold, 16 V tolerant)
-- [ ] `AMS_OK` is used with the charger too: make sure it reaches the charging SDC through the connector used while charging
-
-Next PCB version (v2):
-
-- External watchdog: TI TPS3431SDRBR (LCSC C702145), 200 ms timeout, WDO to NRST and AND-gated with `AMS_OK`. Datasheet in `Reference Docs/Master/Watchdog/`. v1 uses the STM32 IWDG only.
-- SDC readback input (BMS sees whether the SDC is closed)
-- Heartbeat `AMS_OK` (toggling signal, so a stuck pin can't hold the SDC closed)
-
-PCB:
-
-- [ ] Create the PCB document and layout
-- [ ] TS/LV spacing at the transformer: measure on the real footprint, plan conformal coating or a slot
-- [ ] Mark TS and LV areas on the silkscreen (EV 4.3.6)
-- [ ] Check LCSC stock for SOIC-8 `TCAN1462VDRQ1` before v2
-
-Current sensor (see [Open items](#open-items)):
-
-- [ ] Read the TS cable type from its jacket printing
-- [ ] Get FSUK's written confirmation of the cable-insulation argument (before freezing the layout)
-- [ ] Megger and hipot the cable-through-sensor assembly
-- [ ] Bench calibration, both channels, both directions
-- [ ] Fault-injection test for every row of the fault table, SDC opens in under 500 ms
-
-Isolation transformer:
-
-- [ ] Ask the ESA whether a Functional-insulation barrier (SM91502AL) is accepted, or switch to HMU1228NL
-
-Firmware:
-
-- [ ] BQ79600-Q1 SPI driver and stack readout
-- [ ] Limit checks, fault latch, `AMS_OK_MCU` and `CHG_EN` control (both default low until checks pass)
-- [ ] IWDG in hardware mode (option byte `IWDG_SW = 0`), ~100–200 ms timeout, kicked only from the main loop
-- [ ] Current sensor startup zero check and per-sample fault checks
-- [ ] SoC estimation
-- [ ] Balancing control (only while `BAL_EN_N` reads low, debounced, and the conditions in [Balancing switch](#balancing-switch) pass)
-- [ ] CAN1 telemetry and CAN2 summary messages
+- v1 uses the STM32's internal watchdog (IWDG). An external watchdog is planned
+  for v2.
 
 ## Schematic structure
 
@@ -157,51 +96,34 @@ between them. Project options: net identifier scope **Hierarchical**,
   net labels on the Top wires; they win over the sheet's `CAN_H`/`CAN_L`
   because of Higher Level Names Take Priority.
 
-### STM32 pin proposal (to confirm in CubeMX)
-
-| Link | Signal | Pin | Function |
-|---|---|---|---|
-| `SWD` | SWDIO / SWCLK / SWO | PA13 / PA14 / PB3 | SWD, SWO trace |
-| `SWD` | NRST | NRST (`MCU_NRST`) | reset |
-| `CAN_MCU` (CAN1) | RXD / TXD | PA11 / PA12 | FDCAN1, AF9 |
-| `CAN_MCU` (CAN2) | RXD / TXD | PB12 / PB13 | FDCAN2, AF9 |
-| `BQ97600_SPI` | SCLK / MISO/TX / MOSI/RX | PA5 / PA6 / PA7 | SPI1 |
-| `BQ97600_SPI` | nCS / NFAULT / nUART/SPI | PA4 / PB0 / PB1 | GPIO |
-| `ISENSE_ADC` | HI / LO / SUPPLY | PC0 / PC1 / PC2 | ADC12_IN6 / IN7 / IN8 |
-| `CHG_EN` | | PC6 | GPIO out |
-| `AMS_OK_MCU` | | PC7 | GPIO out |
-| `BAL_EN_N` | | PC8 (suggested) | GPIO in |
-
-Avoid PB8 (BOOT0 on the G4) and keep PA13, PA14, PB3 free for debug.
-
 ## MCU selection: STM32G474
 
-Decision: **STM32G474** (fallback **STM32G473**, pin/feature-compatible — only
-if G474 is out of stock).
+**Chosen: STM32G474** (LQFP64). Fallback: **STM32G473**, same pins and
+features, only if the G474 is out of stock.
 
-Six other candidates also pass every must-have requirement (see verdict table
-below), but G474 is the only one that also meets every nice-to-have: built-in
-op-amps/PGAs, most ADCs, deepest CAN buffering.
+Six other candidates also meet every must-have (verdict table below). The
+G474 is the only one that also meets every nice-to-have: built-in
+op-amps/PGAs, the most ADCs, and the deepest CAN buffering.
 
 ### Requirements
 
 | # | Requirement | Priority | Why |
 |---|---|---|---|
-| 1 | At least 2 CAN peripherals | Must | CAN1 = telemetry/diagnostics, CAN2 = ECU/dashboard. Classic CAN or CAN-FD both count. |
-| 2 | CAN FD support | Nice | A 64 B CAN-FD frame needs ~7 frames per snapshot vs ~55 on classic CAN, but classic CAN at 1 Mbps already does a full snapshot in ~7 ms. Not a deciding factor. |
+| 1 | At least 2 CAN peripherals | Must | CAN1 = telemetry/diagnostics, CAN2 = ECU/dashboard. Classic CAN or CAN FD both count. |
+| 2 | CAN FD support | Nice | With 64 B CAN FD frames a snapshot takes ~7 frames, against ~55 on classic CAN. Classic CAN at 1 Mbps still sends a full snapshot in ~7 ms, so this didn't decide anything. |
 | 3 | SPI master for BQ79600-Q1 | Must | One SPI peripheral, plus `SPI_RDY` and `NFAULT` pins. |
 | 4 | Hardware FPU | Must | SoC estimation algorithms. |
 | 5 | RAM / Flash capacity | Must | Snapshot is ~420 B, plus limit tables, balancing state, fault latch, CAN queues. |
-| 6 | Fast multi-channel ADC | Must | Hall-effect current sensor outputs an analog voltage proportional to current — the ADC reading is converted to a current value and feeds the overcurrent limit check directly (part of the fault-latch/AMS relay logic, not just telemetry). |
-| 7 | Internal PGA / op-amp | Not needed | Confirmed: Hall-effect sensor (voltage output), not a raw shunt. No amplification needed before the ADC. |
-| 8 | GPIO: 2 EXTI + relay, watchdog, opto outputs, switch input | Must | `SPI_RDY`, `NFAULT`, AMS relay, watchdog toggle, charger opto, balancing switch. |
-| 9 | Deep CAN buffering (non-blocking TX) | Should | Telemetry must never block the safety path (relay, fault latch, watchdog). |
+| 6 | Fast multi-channel ADC | Must | The Hall current sensor outputs a voltage proportional to current. The ADC reading is converted to a current and feeds the overcurrent check directly (fault latch and `AMS_OK`, not just telemetry). |
+| 7 | Internal PGA / op-amp | Not needed | The sensor is a Hall sensor with a voltage output, not a shunt, so nothing needs amplifying before the ADC. |
+| 8 | GPIO: 2 EXTI + outputs and a switch input | Must | `SPI_RDY` and `NFAULT` (interrupts), `AMS_OK_MCU`, charger opto (`CHG_EN`), balancing switch (`BAL_EN_N`), and the external watchdog toggle in v2. |
+| 9 | Deep CAN buffering (non-blocking TX) | Should | Telemetry must not block the safety path (`AMS_OK`, fault latch, watchdog). |
 
 ### Candidates evaluated
 
 STM32G474, G473, G491, G431, H503, H523/H563, H723/H743, F446, F405, F413,
-F429/F407, G0B1, F303 — spread across ST's current CAN-capable families, plus
-F303 as a real precedent (ENNOID-BMS uses it, see
+F429/F407 and G0B1, from ST's CAN-capable families. The F303 was added
+because ENNOID-BMS uses it (see
 `Reference Docs/Shared/Open-Source BMS Projects/README.md`).
 
 ### Comparison matrix
@@ -218,9 +140,10 @@ F303 as a real precedent (ENNOID-BMS uses it, see
 | GPIO requirements | Must | Meets | Meets | Meets | Meets | Meets | Meets | Meets | Meets | Meets | Meets | Meets | Meets | Meets |
 | Deep CAN buffering | Should | Meets | Meets | Meets | Meets | Meets | Meets | Meets | Partial | Partial | Partial | Partial | Meets | Partial |
 
-Specs are from memory — verify CAN counts, ADC counts, and memory sizes in
-CubeMX/datasheet before committing to silicon. H503's CAN count specifically
-is unconfirmed.
+The matrix was filled in from memory, not checked against each datasheet.
+Check the CAN count, ADC count and memory sizes in CubeMX or the datasheet
+before ordering (it's on the to-do list). The H503's CAN count is
+unconfirmed.
 
 ### Verdict summary
 
@@ -242,105 +165,88 @@ is unconfirmed.
 
 ### Why G474 over the other passing candidates
 
-- G474 has the most ADCs of any candidate — reads the Hall-effect current
-  sensor with margin to spare.
-- F4 family CAN buffering is 3 TX mailboxes (needs a software TX queue to
-  avoid blocking the safety path); G474's FDCAN has message RAM instead.
-- H7 and the larger F4 parts (F429/F407, F413) pass everything too, but are
-  bigger/pricier for no benefit here.
-- G473 = same silicon family, same analog block, same CAN count. Fallback
-  only, not a second option.
+- The G474 has the most ADCs of the candidates, more than the current
+  sensor needs.
+- The F4 parts have 3 CAN TX mailboxes, so they'd need a software TX queue to
+  keep CAN from blocking the safety path. The G474's FDCAN has message RAM.
+- The H7 and the larger F4 parts (F429/F407, F413) also pass everything, but
+  are bigger and more expensive for no benefit here.
+- The G473 is the same family, with the same analog blocks and CAN count. It's
+  the fallback, not a second option.
 
-The built-in op-amps that several candidates lack (F4, H5, H7 families) are
-not a factor either way — confirmed not needed, see requirement 7 above.
+The op-amps that the F4, H5 and H7 parts lack don't matter here, because
+none are needed (requirement 7).
 
 ### Package
 
-LQFP64 — enough pins for everything above, with spares for SWD/debug.
+LQFP64: enough pins for everything above, with spares and the SWD pins.
+
+### Schematic (`MCU_STM32.SchDoc`)
+
+![MCU_STM32.SchDoc: STM32G474RET6 with decoupling, 20 MHz crystal, NRST and BOOT0, balancing switch, and the harnesses and ports to the other sheets](docs/sch/mcu.png)
+
+The I/O pins are not assigned yet (to-do: pick them in CubeMX).
 
 ### Sources
 
 - [Google Sheet — stm32_requirements_matrix](https://docs.google.com/spreadsheets/d/1AgWugIduUw6VQksLgAckyC9UT4bKEkQZ88cZwor0tiw/edit?usp=sharing)
 - `Reference Docs/Master/STM32 MCU/` — STM32G474xB/xC/xE datasheet (DS12288)
 - `Reference Docs/Master/BQ79600/` — BQ79600-Q1 datasheet, design recommendations, software reference, bring-up
-- `Reference Docs/Shared/Open-Source BMS Projects/README.md` — real-world STM32 MCU precedent
-- `Reference Docs/Master/Current Sensor/` — LEM DHAB S/124 datasheet (the Hall-effect current sensor referenced in requirements 6-7 above)
+- `Reference Docs/Shared/Open-Source BMS Projects/README.md` — other BMS projects that use an STM32
+- `Reference Docs/Master/Current Sensor/` — LEM DHAB S/124 datasheet (the current sensor in requirements 6 and 7)
 
-## CAN transceiver selection
+## Balancing switch
 
-**v1 (this prototype): TCAN1042V-Q1** (SOIC-8, `TCAN1042VDRQ1`, LCSC `C485806`),
-on both CAN1 and CAN2. VIO tied to the 3.3V rail (same rail as the STM32) for
-direct 3.3V logic interfacing; VCC on the existing 5V rail.
+A slide switch on the board that can force balancing off. It only overrides
+to off: switching it on never starts balancing by itself. Balancing runs only
+when all of these are true:
 
-**v2 (target): TCAN1462V-Q1.** This was the original pick — see rationale
-below — but as of this prototype, LCSC (the team's only supplier) has the
-SOIC-8 `TCAN1462VDRQ1` out of stock, with only the VSON-8 `TCAN1462VDRBRQ1`
-(leadless, needs reflow/hot air) in stock. v1 is hand-soldered, so v1 uses
-TCAN1042V-Q1 instead — fully valid, same vendor, same AEC-Q100 grade, same
-Functional Safety documentation, just without SIC. **Check LCSC stock for
-SOIC-8 `TCAN1462VDRQ1` before starting v2**, and switch to it if available.
+- switch on (`BAL_EN_N` low)
+- no fault, temperatures OK
+- max cell > 3.9 V and spread > 20 mV
+- not driving
 
-### Isolation: not required
+Balancing works with the charger unplugged and stops when the spread closes.
 
-Checked against the actual rulebooks (`Reference Docs/Shared/FSUK Rules/`), not
-assumption. FSG rule **EV 4.3.1**: "The entire TS and LVS must be galvanically
-isolated" — this is a TS↔LVS boundary rule. Both CAN buses here are LVS-side
-only (STM32 ↔ ECU/dashboard), already downstream of the one isolation
-boundary that matters: the transformer-coupled daisy-chain link to the
-BQ79600-Q1. Searched both rulebooks fully for "isolat"/"galvanic" — every
-instance concerns the TS/LVS boundary (EV4.3.1) or component-level cases
-(EV5.6.3, AIRs), never CAN. Confirmed by checking `FSAE_LSU_BMS` (a real FSAE
-team's repo): their CAN nets are literally named `ISO_CAN1+/-`, but there's no
-isolator component anywhere in their schematics or BOM — the name doesn't
-mean what it implies.
+### Circuit (`MCU_STM32.SchDoc`)
 
-### Requirements and candidates
+<img src="docs/parts/alps-ssss811101.jpg" width="180" alt="ALPS SSSS811101 slide switch">
 
-| Requirement | Why |
-|---|---|
-| 3.3V logic (VIO) | Must interface directly with the STM32G474's 3.3V GPIO, no external level shifter. |
-| Automotive-grade (AEC-Q100) | Board sees vibration, heat near HV equipment, and electrical noise — not a bench/lab environment. |
+![Balancing switch on MCU_STM32.SchDoc: 10k pull-up from +3V3 and 100 nF on BAL_EN_N, switch pin 3 to BAL_EN_N, pin 2 and tabs 4-7 to GND](docs/sch/balancing-switch.png)
 
-Four candidates compared, specs pulled directly from each manufacturer's
-datasheet (`Reference Docs/Master/CAN Transceivers/`):
+| Part | Connection | Why |
+|---|---|---|
+| ALPS SSSS811101 (LCSC C109335) | pin 2 (common) and tabs 4–7 to GND, pin 3 to `BAL_EN_N`, pin 1 unused | SMD right-angle slide switch, SPDT. Only reachable with the box open, so it can't be knocked by accident. |
+| 10k pull-up | +3V3 to `BAL_EN_N` | Holds the line high (balancing off) when the switch is off, during MCU reset (no internal pull-up yet) and if a joint fails. |
+| 100 nF | `BAL_EN_N` to GND | With the 10k, ~1 ms filter against contact bounce and noise. |
 
-| | TCAN1462V-Q1 | TCAN1042V-Q1 | TJA1057 | MCP2562FD |
-|---|---|---|---|---|
-| VCC / VIO | 4.5-5.5V / 1.7-5.5V | 4.5-5.5V / 3.3V or 5V | 4.5-5.5V / 2.91-5.5V | 4.5-5.5V / 1.8-5.5V |
-| Max data rate | 8 Mbps (CAN FD + SIC) | 2 Mbps (5 Mbps "G" suffix) | 5 Mbps (all but "T" variant) | 8 Mbps (CAN FD) |
-| Bus fault tolerance | ±58V | ±58V (±70V "H" variant) | ±42V | Not confirmed |
-| AEC-Q100 | Grade 1, confirmed | Grade 1, confirmed | Qualified, confirmed | **Not in datasheet** — marketing language only |
-| Functional Safety docs | Yes | Yes | No | No |
-| Distinguishing feature | SIC — reduces ringing on multi-stub topologies | Direct TI/BQ79616 precedent | — | — |
+- **Active low:** switch on connects `BAL_EN_N` to GND = balancing allowed.
+  Anything that goes wrong reads high = balancing off, the safe direction.
+- **10k vs the switch's minimum load:** the switch needs at least 50 µA at
+  3 V to switch reliably. 3.3 V / 10k = 330 µA. Keep the pull-up below ~66k.
+- **Ratings:** 0.3 A / 5 V DC max, 50 µA / 3 V DC min, −40 to +85 °C.
+- **PCB:** the land pattern has two ø0.9 mm locating holes; make sure the
+  footprint has them.
+- **Firmware:** read `BAL_EN_N` a few times before acting (debounce).
 
-### Why TCAN1462V-Q1 over TCAN1042V-Q1 (the v2 reasoning)
-
-Both are fully valid (same vendor, same AEC-Q100 grade, same Functional
-Safety documentation). TCAN1462V-Q1 was chosen for **SIC** (Signal
-Improvement Capability) — actively reduces bus ringing in networks with
-multiple unterminated stubs, which fits a car harness with several CAN nodes
-(BMS-Master, ECU, dashboard) branching off rather than a clean daisy chain.
-MCP2562FD was ruled out for lacking confirmed AEC-Q100 qualification.
-TJA1057 is AEC-Q100 qualified but has no Functional Safety documentation and
-no SIC — ruled out in favor of staying in the same TI ecosystem as the rest
-of the signal chain (BQ79600-Q1 → BQ79616 → CAN transceiver). v1 uses
-TCAN1042V-Q1 instead purely for hand-solder package/stock availability, not
-because the SIC reasoning changed.
-
-### Sources
-
-- `Reference Docs/Master/CAN Transceivers/` — datasheets for all four candidates
-- `Reference Docs/Shared/FSUK Rules/` — FSUK and FSG rulebooks (isolation requirement check)
-- `Reference Docs/Shared/Open-Source BMS Projects/FSAE_LSU_BMS/` — real-world CAN wiring reference (and the `ISO_CAN` naming caveat above)
+Source: `Reference Docs/Master/Balancing Switch/ALPS SSSS811101 Datasheet.pdf`
 
 ## Daisy-chain isolation transformer selection
 
-**Decision: Bourns SM91502ALE**, on both ends of every daisy-chain link: the
-BQ79600-Q1 side on this board and COMH/COML on every `BMS-Module`.
+**Chosen: Bourns SM91502ALE** (LCSC C915690), on both ends of every
+daisy-chain link: the BQ79600-Q1 side on this board and COMH/COML on every
+`BMS-Module`.
+
+<img src="docs/parts/bourns-sm91502ale.jpg" width="200" alt="Bourns SM91502ALE transformer">
 
 On this board the transformer is the TS/LV isolation barrier: the BQ79600-Q1
 and STM32 are LV, and everything past the transformer is TS. Between modules
 it only isolates TS from TS (one module's voltage, ~67 V).
+
+![Stack_Interface.SchDoc: BQ79600-Q1 with SPI pull-ups, COMH filter and ESD diodes, SM91502ALE transformer to ISO_COMHP/N](docs/sch/stack-interface.png)
+
+`Stack_Interface.SchDoc`: the BQ79600-Q1 (top) and the COMH link through the
+transformer to J2 (bottom).
 
 ### TI's validated list
 
@@ -444,7 +350,7 @@ test, which is well above the 1209 Vrms required.
   transformer. Mark the TS and LV areas on the silkscreen, as EV 4.3.6
   requires.
 - **Same part on both ends.** With identical module boards this is automatic.
-  Note it on the schematic so nobody substitutes a different transformer on
+  It's noted on the schematic so nobody substitutes a different transformer on
   one board later.
 - **Ordering code.** `SM91502ALE` = SM91502, A (AEC-Q200), L (Cu/Ni/Sn
   termination), E (tape and reel, 800 pcs/reel).
@@ -456,12 +362,87 @@ test, which is well above the 1209 Vrms required.
 - `Reference Docs/Module/TIDA-010271 Reference Design/` — uses HMU1228NL
 - `Reference Docs/Shared/FSUK Rules/FSG-Rules_2026_v1.1.pdf` — EV 1.2.1, EV 4.3.6 and Table 5
 
+## CAN transceiver selection
+
+**v1 (this prototype): TCAN1042V-Q1** (SOIC-8, `TCAN1042VDRQ1`, LCSC
+C485806) on CAN1 and CAN2. VIO is on `+3V3`, the same rail as the STM32, so
+the logic connects directly. VCC is on `+5V`.
+
+**v2: TCAN1462V-Q1.** This was the first pick (reasons below). LCSC, our only
+supplier, has the SOIC-8 `TCAN1462VDRQ1` out of stock and only the VSON-8
+`TCAN1462VDRBRQ1`, which is leadless and needs reflow or hot air. v1 is hand
+soldered, so it uses the TCAN1042V-Q1: same vendor, same AEC-Q100 grade, same
+functional-safety documentation, but no SIC. **Check LCSC for the SOIC-8
+`TCAN1462VDRQ1` before v2** and switch if it's in stock.
+
+![CAN.SchDoc: CAN_MCU harness, TXD/RXD pull-ups and 0R series resistors, TCAN1042VDRQ1, split termination 2x 60R](docs/sch/can.png)
+
+`CAN.SchDoc` is one channel; `Top.SchDoc` uses it twice (CAN1, CAN2).
+
+### Isolation: not required
+
+Checked in the rulebooks (`Reference Docs/Shared/FSUK Rules/`):
+
+- **EV 4.3.1:** "The entire TS and LVS must be galvanically isolated." This is
+  about the TS/LV boundary.
+- Both CAN buses are LV only (STM32 to ECU/dashboard). On this board the TS/LV
+  boundary is the daisy-chain transformer to the BQ79600-Q1, which is already
+  isolated.
+- Searching both rulebooks for "isolat" and "galvanic" only finds the TS/LV
+  boundary (EV 4.3.1) and component cases (EV 5.6.3, AIRs), nothing about CAN.
+- The LSU FSAE BMS (`FSAE_LSU_BMS`) names its CAN nets `ISO_CAN1+/-`, but has
+  no isolator in its schematics or BOM, so the name doesn't mean isolated.
+
+### Requirements and candidates
+
+| Requirement | Why |
+|---|---|
+| 3.3 V logic (VIO) | Connects directly to the STM32G474's 3.3 V pins, no level shifter. |
+| Automotive grade (AEC-Q100) | The board sees vibration, heat near HV parts and electrical noise. |
+
+Four candidates, specs from each datasheet (`Reference Docs/Master/CAN Transceivers/`):
+
+| | TCAN1462V-Q1 | TCAN1042V-Q1 | TJA1057 | MCP2562FD |
+|---|---|---|---|---|
+| VCC / VIO | 4.5-5.5V / 1.7-5.5V | 4.5-5.5V / 3.3V or 5V | 4.5-5.5V / 2.91-5.5V | 4.5-5.5V / 1.8-5.5V |
+| Max data rate | 8 Mbps (CAN FD + SIC) | 2 Mbps (5 Mbps "G" suffix) | 5 Mbps (all but "T" variant) | 8 Mbps (CAN FD) |
+| Bus fault tolerance | ±58V | ±58V (±70V "H" variant) | ±42V | Not confirmed |
+| AEC-Q100 | Grade 1, confirmed | Grade 1, confirmed | Qualified, confirmed | **Not in datasheet** — marketing language only |
+| Functional Safety docs | Yes | Yes | No | No |
+| Distinguishing feature | SIC — reduces ringing on multi-stub topologies | Direct TI/BQ79616 precedent | — | — |
+
+### Why TCAN1462V-Q1 over TCAN1042V-Q1 (the v2 reasoning)
+
+Both work (same vendor, same AEC-Q100 grade, same functional-safety
+documentation). The difference:
+
+- **SIC** (signal improvement capability) on the TCAN1462V-Q1 reduces ringing
+  on buses with several unterminated stubs. The car harness has several CAN
+  nodes (BMS-Master, ECU, dashboard) branching off the bus, not a clean
+  daisy chain.
+- **MCP2562FD:** ruled out, AEC-Q100 isn't stated in the datasheet.
+- **TJA1057:** AEC-Q100, but no functional-safety documentation and no SIC.
+  We stayed with TI like the rest of the chain (BQ79600-Q1, BQ79616).
+- v1 uses the TCAN1042V-Q1 only because of package and stock. The SIC reason
+  for v2 still stands.
+
+### Sources
+
+- `Reference Docs/Master/CAN Transceivers/` — datasheets for all four candidates
+- `Reference Docs/Shared/FSUK Rules/` — FSUK and FSG rulebooks (isolation requirement check)
+- `Reference Docs/Shared/Open-Source BMS Projects/FSAE_LSU_BMS/` — CAN wiring of another FSAE BMS (and the `ISO_CAN` naming above)
+
 ## Current sensor selection
 
-**Decision: LEM DHAB S/124** (dual-channel open-loop Hall, analog output),
-around the 18 mm orange TS cable inside the TSAC. **Pending:** FSUK's written
-confirmation of the isolation argument below, before the Master layout is
-frozen.
+**Chosen: LEM DHAB S/124** (two-channel open-loop Hall sensor, analog
+outputs), around the 18 mm orange TS cable inside the TSAC. **Pending:**
+FSUK's written confirmation of the isolation argument below, before the
+Master layout is frozen.
+
+<img src="docs/parts/lem-dhab-s124.jpg" width="240" alt="LEM DHAB S/124 current sensor">
+
+The TS cable goes through the hole. The connector carries 5 V, GND and the two
+outputs.
 
 ### What the rules require
 
@@ -521,6 +502,8 @@ The sensor's 5 V supply is measured on a third channel with the same divider,
 because the output is ratiometric.
 
 ![Signal path from the DHAB output through the divider to the STM32 ADC](docs/current-sensor/3-signal-path.svg)
+
+![Current_Sense.SchDoc: 12k/18k dividers with 22 nF and 100 nF on ISENSE_HI and ISENSE_LO, supply monitor divider, ISENSE_ADC harness](docs/sch/current-sense.png)
 
 - 4.75 V max → 2.85 V at the pin; a short to 5 V → 3.0 V, so the two are distinguishable.
 - The 18 kΩ bottom resistor pulls a broken wire to 0 V, which the range check catches.
@@ -655,23 +638,6 @@ datasheet gives no insulation figures at all.
 - [FS Czech 2025 EV inspection sheet](https://fsczech.cz/wp-content/uploads/2025/07/FSCZ25_InspectionSheet_EV.pdf) — isolation barrier checks
 - [FSN 2022 accumulator inspection checklist](https://www.formula-student.nl/wp-content/uploads/2022/07/FSN-2022-Scrutineering-System-Accu-Inspection-Master.pdf) — current sensor disconnect test
 
-## Charger interface
-
-The BMS stops the Manzanita Micro PFC charger through the Reg Bus BLACK line
-(`Charger.SchDoc`): +5 V on BLACK = charger stops, near 0 V = charger runs.
-
-- **Fail-safe:** `CHG_EN` high = charger runs. `CHG_EN` low, MCU reset or BMS off = BLACK pulled to 5 V by the 10k = charger stops.
-- **HV:** the charger is not isolated, so `+5V_REGBUS`, `GND_REGBUS` and `REGBUS_STOP` sit at mains + pack potential. Never tie `GND_REGBUS` to `GND`.
-- **330R:** about 6 mA LED. The output needs 0.5 mA (5 V / 10k), PC817 CTR ≥ 50 %, so about 5× margin.
-- **RJ12:** 1 `+5V_REGBUS`, 2 `REGBUS_STOP`, 4 `GND_REGBUS`. 3, 5, 6 unused.
-- **Part:** we don't have an RJ12 (6P6C) jack locally, it has to be ordered online.
-- **Opto isolation (EV 1.2.1, max TS 403 V):** the PC817B is the TS/LV barrier. Test voltage 5000 Vrms > 1209 Vrms ✅, working voltage V_IORM 630 V peak > 403 V ✅, insulation 5×10¹⁰ Ω > 0.2 MΩ ✅. While charging the Reg Bus side also swings to the mains peak (230 V + 10 % ≈ 360 V peak), still < 630 V. A reinforced opto is not required.
-- **PCB (EV 4.3.6, 300–600 V):** 3.0 mm clearance and 20 mm creepage, or 4.0 mm with conformal coating. No opto package gives 20 mm, so coat it or slot under it, like the transformer. Check the gap across the SMD-4 (LS10.3) footprint is ≥ 4 mm.
-
-This is the soft stop. The hard stop is the AMS opening the charging shutdown circuit (EV 7.2).
-
-Sources: `Reference Docs/Master/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiring), `Reference Docs/Master/Optocouplers/PC817 Datasheet.pdf`
-
 ## AMS_OK signal to the SDC
 
 The SDC board (another team member) holds the AMS latch, reset and relays.
@@ -695,7 +661,7 @@ Q1 = AO3400A (level shift), Q2 = AO3401A (12 V high-side switch), 2K2 = output s
 - One N-MOSFET on top: its gate would need to be above 12 V + threshold, which needs a charge pump.
 - One N-MOSFET to GND: a short to GND would read as OK, which T 11.9 forbids.
 
-Q1 is just a level shifter for Q2. The two 10k split the gate drive to about −6 V, inside the AO3401A's ±12 V limit.
+Q1 only level-shifts the drive for Q2. The two 10k split the gate drive to about −6 V, inside the AO3401A's ±12 V limit.
 
 ### Parts
 
@@ -768,37 +734,30 @@ Sources (`Reference Docs/Master/AMS_OK Driver/`):
 - UNI-ROYAL 0805W8F2201T5E 2.2 kΩ 125 mW: [LCSC C17520](https://www.lcsc.com/product-detail/C17520.html)
 - FSG Rules 2026 v1.1, T 11.9 (`Reference Docs/Shared/FSUK Rules/`)
 
-## Balancing switch
+## Charger interface
 
-A slide switch on the board that can force balancing off. It is a
-**force-off override only**: switching it on never starts balancing by itself.
-Balancing runs only when all of these are true:
+The pack is charged with a Manzanita Micro PFC charger. The BMS stops it
+through the charger's Reg Bus jack (`REG BUS`, top left of the front panel),
+using the BLACK line (`Charger.SchDoc`): +5 V on BLACK = charger stops, near
+0 V = charger runs.
 
-- switch on (`BAL_EN_N` low)
-- no fault, temperatures OK
-- max cell > 3.9 V and spread > 20 mV
-- not driving
+<img src="docs/parts/manzanita-pfc-charger.jpg" width="520" alt="Manzanita Micro PFC charger: front panel with the REG BUS jack, dimensions in inches">
 
-Balancing works with the charger unplugged and stops when the spread closes.
+Front panel and dimensions (inches), from the Manzanita datasheet.
 
-### Circuit (`MCU_STM32.SchDoc`)
+![Charger.SchDoc: CHG_EN through 330R to the PC817B LED, transistor pulls REGBUS_STOP, 10k pull-up to +5V_REGBUS](docs/sch/charger.png)
 
-| Part | Connection | Why |
-|---|---|---|
-| ALPS SSSS811101 (LCSC C109335) | pin 2 (common) and tabs 4–7 to GND, pin 3 to `BAL_EN_N`, pin 1 unused | SMD right-angle slide switch, SPDT. Only reachable with the box open, so it can't be knocked by accident. |
-| 10k pull-up | +3V3 to `BAL_EN_N` | Holds the line high (balancing off) when the switch is off, during MCU reset (no internal pull-up yet) and if a joint fails. |
-| 100 nF | `BAL_EN_N` to GND | With the 10k, ~1 ms filter against contact bounce and noise. |
+- **Fail-safe:** `CHG_EN` high = charger runs. `CHG_EN` low, MCU reset or BMS off = BLACK pulled to 5 V by the 10k = charger stops.
+- **HV:** the charger is not isolated, so `+5V_REGBUS`, `GND_REGBUS` and `REGBUS_STOP` sit at mains + pack potential. Never tie `GND_REGBUS` to `GND`.
+- **330R:** about 6 mA LED. The output needs 0.5 mA (5 V / 10k), PC817 CTR ≥ 50 %, so about 5× margin.
+- **RJ12:** 1 `+5V_REGBUS`, 2 `REGBUS_STOP`, 4 `GND_REGBUS`. 3, 5, 6 unused.
+- **Connector:** J3, CONNFLY DS1133-S60BPX (C77859), ordered online, see [J3](#j3-charger-reg-bus-ts-side).
+- **Opto isolation (EV 1.2.1, max TS 403 V):** the PC817B is the TS/LV barrier. Test voltage 5000 Vrms > 1209 Vrms ✅, working voltage V_IORM 630 V peak > 403 V ✅, insulation 5×10¹⁰ Ω > 0.2 MΩ ✅. While charging the Reg Bus side also swings to the mains peak (230 V + 10 % ≈ 360 V peak), still < 630 V. A reinforced opto is not required.
+- **PCB (EV 4.3.6, 300–600 V):** 3.0 mm clearance and 20 mm creepage, or 4.0 mm with conformal coating. No opto package gives 20 mm, so coat it or slot under it, like the transformer. Check the gap across the SMD-4 (LS10.3) footprint is ≥ 4 mm.
 
-- **Active low:** switch on connects `BAL_EN_N` to GND = balancing allowed.
-  Anything that goes wrong reads high = balancing off, the safe direction.
-- **10k vs the switch's minimum load:** the switch needs at least 50 µA at
-  3 V to switch reliably. 3.3 V / 10k = 330 µA. Keep the pull-up below ~66k.
-- **Ratings:** 0.3 A / 5 V DC max, 50 µA / 3 V DC min, −40 to +85 °C.
-- **PCB:** the land pattern has two ø0.9 mm locating holes; make sure the
-  footprint has them.
-- **Firmware:** read `BAL_EN_N` a few times before acting (debounce).
+This is the soft stop. The hard stop is the AMS opening the charging shutdown circuit (EV 7.2).
 
-Source: `Reference Docs/Master/Balancing Switch/ALPS SSSS811101 Datasheet.pdf`
+Sources: `Reference Docs/Master/Manzanita PFC-20 Charger/` (Owners Manual, Reg Bus Wiring), `Reference Docs/Master/Optocouplers/PC817 Datasheet.pdf`
 
 ## Power budget
 
@@ -880,8 +839,8 @@ At 11 V (low LV battery) the worst case rises to ≈ 165 mA.
 **Not on our budget:** the 10k Reg Bus pull-up on `Charger.SchDoc` (0.5 mA)
 is powered by the charger's own `+5V_REGBUS`, not by this board.
 
-**To confirm once the parts are picked:** buck efficiency at 6.5 V / 0.2 A,
-LDO dropout and quiescent current, BQ79600 VIO current.
+**Still to confirm on the bench:** buck efficiency at 6.5 V / 0.2 A, BQ79600
+VIO current.
 
 Sources: TCAN1042-Q1 datasheet (Supply Characteristics), BQ79600-Q1
 datasheet (Supply currents), STM32G474 DS12288 Tables 21 and 35, LEM DHAB
@@ -948,7 +907,7 @@ Between the LV connector (`LV_IN`) and the protected `+12V` rail, on
 | No TVS | 17.07 V | — | 58.7 A |
 | **No bulk cap**, TVS fitted | **24.2 V** (clamped) | **17.0 A** | 48.3 A |
 
-- **The 100 µF bulk cap does the real work:** its 0.3 Ω ESR damps the
+- **The 100 µF bulk cap does most of the damping:** its 0.3 Ω ESR damps the
   harness LC ringing, so VIN only overshoots by 1 V.
 - **The TVS is the backstop** if the cap is missing or fails. It held VIN at
   24 V, under the buck's 32 V absolute max, and 17 A for a few µs is well
@@ -962,11 +921,6 @@ While the car is on the charger, the board is powered from **a separate
 battery, just like the LV battery** (12 V nominal). It's the same voltage
 range, so it goes into the same `LV_IN` input and through the same
 protection. No change to the input stage.
-
-### Still open
-
-- `LV_IN` gets its other end when the LV connector is drawn on
-  `Connectors.SchDoc` and wired through `Top.SchDoc`.
 
 Sources: Littelfuse 0452 series and SMBJ series ratings from LCSC listings
 (C44669, C151254); SS34 ratings from LCSC C8678; SMBJ datasheet in
@@ -1410,7 +1364,7 @@ Z_Cout = 1 / (2π·f·C_out) falls as frequency rises. For 1 µF:
 | 100 kHz | 1.6 Ω |
 | 500 kHz | 0.32 Ω |
 
-A real PSRR curve is the two added together: it falls as the loop gives up,
+A real PSRR curve is the two added together: it falls as the loop gain drops,
 then levels off as the capacitor takes over. The TLV767, for example, gives
 70 dB at 1 kHz, 53 dB at 100 kHz and 46 dB at 1 MHz.
 
@@ -1451,6 +1405,8 @@ J1–J3 are **right-angle**: the cable plugs in parallel to the PCB. J4 is only 
 | J3 | CONNFLY DS1133-S60BPX RJ12 6P6C, right-angle | 6 (3 used) | TS | Charger Reg Bus |
 | J4 | 2×5 1.27 mm boxed header, vertical | 10 | LV | SWD debug (ST-LINK) |
 
+![Connectors.SchDoc: J1 (2x8), J2 (2-pin), J3 (RJ12) and J4 (SWD) with their ports](docs/sch/connectors.png)
+
 ### Why Molex Micro-Fit 3.0
 
 | | **Micro-Fit 3.0** (chosen) | TE Deutsch DTM | Molex MX150 (sealed) | JST PH/XH-type |
@@ -1473,7 +1429,7 @@ J1–J3 are **right-angle**: the cable plugs in parallel to the PCB. J4 is only 
     name the family in their public manuals.
 - **One connector fits all of J1,** with far more current per pin than we
   need (0.15 A max).
-- **Genuine Molex parts in stock,** cheap, and crimpable with one tool for
+- **Molex-made parts in stock on LCSC,** cheap, and crimpable with one tool for
   both J1 and J2.
 - **Through-hole right-angle:** much stronger against cable pull than SMD.
 - **Downside: not sealed.** That's fine inside a closed enclosure. If the
@@ -1512,7 +1468,8 @@ Board header (left) and cable receptacle (right).
 | 14 | `ISENSE_LO` | DHAB S/124 output | 0–5 V |
 | 15, 16 | — | spare | |
 
-Pin numbers are a proposal; final numbering follows the header's footprint.
+Pin numbers match the J1 symbol on `Connectors.SchDoc` (pins 1–8 in one row,
+9–16 in the other).
 Each function has its own ground next to it, and CAN H/L sit on adjacent
 pins so the twisted pairs stay twisted up to the connector.
 
@@ -1607,3 +1564,100 @@ Sources:
 [Orion BMS 2 wiring manual](https://www.orionbms.com/manuals/pdf/orionbms2_wiring_manual.pdf),
 FSUK rules EV 4.3.5 (`Reference Docs/Shared/FSUK Rules/`). Part numbers and stock
 from LCSC, 2026-10-23. Images: LCSC product photos.
+
+## Progress
+
+### Done
+
+- [x] MCU selected: STM32G474, LQFP64 (see [MCU selection](#mcu-selection-stm32g474))
+- [x] CAN transceiver selected: TCAN1042V-Q1 for v1 (see [CAN transceiver selection](#can-transceiver-selection))
+- [x] Daisy-chain transformer selected: Bourns SM91502ALE (see [transformer selection](#daisy-chain-isolation-transformer-selection))
+- [x] Current sensor selected: LEM DHAB S/124 (see [current sensor selection](#current-sensor-selection))
+- [x] `MCU_STM32.SchDoc`: power and config pins
+- [x] `CAN.SchDoc`: one TCAN1042 channel, used twice on `Top.SchDoc` (`CAN1`, `CAN2`), see [Schematic structure](#schematic-structure)
+- [x] `Stack_Interface.SchDoc`: BQ79600-Q1 and isolation transformer, harness
+- [x] `Current_Sense.SchDoc`: DHAB S/124 dividers and supply monitor, harness
+- [x] `Top.SchDoc`: every sheet symbol named (`MCU`, `CONN`, `PWR`, `CAN1`, `CAN2`, `STACK`, `ISENSE`, `CHG`, `SDC`) and all sheets wired, including the connectors and the MCU
+- [x] `Charger.SchDoc`: isolated charger STOP signal (opto), see [Charger interface](#charger-interface)
+- [x] `AMS_SDC.SchDoc`: `AMS_OK` 12 V output to the SDC board, see [AMS_OK signal](#ams_ok-signal-to-the-sdc)
+- [x] `Top.SchDoc`: `AMS_SDC` sheet symbol synced, `AMS_OK_MCU` and `CHG_EN` wired to `MCU_STM32.SchDoc`
+- [x] Charger opto PC817B checked against EV 1.2.1: passes, kept (see [Charger interface](#charger-interface))
+- [x] Transformer marked "same part on both ends" on the schematic
+- [x] Balancing master switch on `MCU_STM32.SchDoc`, see [Balancing switch](#balancing-switch)
+- [x] Power budget, see [Power budget](#power-budget)
+- [x] Buck selected and designed: TPS62933F, 6.5 V 1 A, LCSC BOM; start-up simulated in LTspice, see [Buck converter](#buck-converter-tps62933f)
+- [x] LDOs selected: TI TLV76150DCYR (`+5V`) and TI TLV76133DCYR (`+3V3`), SOT-223, see [LDOs](#ldos-5v-3v3)
+- [x] LV input protection on `Power.SchDoc`: 1 A slow-blow fuse, SS34 reverse-polarity diode, SMBJ16A TVS, see [LV input protection](#lv-input-protection)
+- [x] Power while charging decided: the board runs from a separate battery like the LV battery, through the same `LV_IN` input, see [LV input protection](#lv-input-protection)
+- [x] Connectors chosen: Molex Micro-Fit 3.0 right-angle for J1 (LV, 2×8) and J2 (daisy chain, 2-pin), CONNFLY DS1133-S60BPX RJ12 for J3, vertical 2×5 1.27 mm SWD for J4, see [Connectors](#connectors)
+- [x] `Power.SchDoc`: TPS62933F buck drawn and wired (6.5 V, R_FBT 71.5k), see [Buck converter](#buck-converter-tps62933f)
+- [x] `Power.SchDoc`: TLV76150DCYR and TLV76133DCYR wired with 2.2 µF in/out caps; `+5V` and `+3V3` reach every sheet, see [LDOs](#ldos-5v-3v3)
+- [x] Buck simulations: start-up, load step, 9 / 11 / 16 V input, hot-plug with and without the bulk cap, see [Simulation](#simulation-ltspice) and [More simulations](#more-simulations-load-step-and-input-range)
+- [x] `Connectors.SchDoc`: J1–J4 placed and wired to ports (SWD as a harness), see [Connectors](#connectors)
+- [x] `MCU_STM32.SchDoc`: ports and harnesses for every link on `Top.SchDoc`
+
+### To do
+
+Schematic:
+
+- [ ] `Power.SchDoc`: add a second 47 µF (C2932477) on the buck output; fixes the loop oscillation at 9 V input in simulation (see [More simulations](#more-simulations-load-step-and-input-range))
+- [ ] `Power.SchDoc`: annotate (designators are still `U?`, `C?`, `R?`)
+- [ ] `MCU_STM32.SchDoc`: select the STM32 pins in CubeMX and wire them to the harness and port net labels; `BAL_EN_N` also needs a pin
+- [ ] Make the sheets more readable: tidy the layout (Connectors around J1 is tight), group each block, add titles
+- [ ] Add notes on the sheets: pin choices on the MCU, TS/LV marking on J2/J3, unused connector pins, why each harness exists
+- [ ] CAN H/L and `ISO_COMH` P/N: differential-pair directives (needs `_P`/`_N` names or the suffix set in Project Options)
+- [ ] CAN TVS (e.g. ESD2CAN24) on `CAN_H`/`CAN_L`, and decide the termination per channel (variant if only one end is terminated)
+- [ ] `Top.SchDoc`: net labels `CAN1_H`, `CAN1_L`, `CAN2_H`, `CAN2_L` on the CAN wires (nets are `CAN_H_CAN1` etc. without them)
+- [ ] Annotate the whole project (CAN parts become `U1_CAN1`, `U1_CAN2`, ...)
+- [ ] Order the J3 RJ12 (CONNFLY DS1133-S60BPX, C77859) online: not available locally
+- [ ] Version 2: second 2-pin daisy-chain connector for COML (ring)
+- [ ] Resolve the notes on `Stack_Interface.SchDoc`: second COM port for v1, 0 Ω resistors, cap packages
+- [ ] Verify CAN, ADC and memory specs in CubeMX/datasheet before ordering
+
+Power, understanding and bench checks:
+
+- [ ] Read Erickson & Maksimović, *Fundamentals of Power Electronics* (2nd ed.), chapters 2 and 3, then check the buck's L and C_out against my own calculation (see the note in [Design](#design))
+- [ ] Bench: ripple on `+5V` and `+3V3` under 0.4 mV p-p (scope AC-coupled, 20 MHz limit)
+- [ ] Bench: drop the input to 9 V and check the buck switches steadily (SW and output on a scope); raise the UVLO to ~10 V if not
+- [ ] Bench: `+5V` powers up cleanly into the real board (TLV761 foldback current limit)
+- [ ] Bench: hot-plug the LV supply a few times; the fuse must not blow on inrush
+
+SDC team (ask before freezing the schematic):
+
+- [ ] Send the [`AMS_OK` interface values](#interface-to-the-sdc-board) (12 V = OK, 10k–100k pull-down, ~6 V threshold, 16 V tolerant)
+- [ ] `AMS_OK` is used with the charger too: make sure it reaches the charging SDC through the connector used while charging
+
+Next PCB version (v2):
+
+- External watchdog: TI TPS3431SDRBR (LCSC C702145), 200 ms timeout, WDO to NRST and AND-gated with `AMS_OK`. Datasheet in `Reference Docs/Master/Watchdog/`. v1 uses the STM32 IWDG only.
+- SDC readback input (BMS sees whether the SDC is closed)
+- Heartbeat `AMS_OK` (toggling signal, so a stuck pin can't hold the SDC closed)
+
+PCB:
+
+- [ ] Create the PCB document and layout
+- [ ] TS/LV spacing at the transformer: measure on the real footprint, plan conformal coating or a slot
+- [ ] Mark TS and LV areas on the silkscreen (EV 4.3.6)
+- [ ] Check LCSC stock for SOIC-8 `TCAN1462VDRQ1` before v2
+
+Current sensor (see [Open items](#open-items)):
+
+- [ ] Read the TS cable type from its jacket printing
+- [ ] Get FSUK's written confirmation of the cable-insulation argument (before freezing the layout)
+- [ ] Megger and hipot the cable-through-sensor assembly
+- [ ] Bench calibration, both channels, both directions
+- [ ] Fault-injection test for every row of the fault table, SDC opens in under 500 ms
+
+Isolation transformer:
+
+- [ ] Ask the ESA whether a Functional-insulation barrier (SM91502AL) is accepted, or switch to HMU1228NL
+
+Firmware:
+
+- [ ] BQ79600-Q1 SPI driver and stack readout
+- [ ] Limit checks, fault latch, `AMS_OK_MCU` and `CHG_EN` control (both default low until checks pass)
+- [ ] IWDG in hardware mode (option byte `IWDG_SW = 0`), ~100–200 ms timeout, kicked only from the main loop
+- [ ] Current sensor startup zero check and per-sample fault checks
+- [ ] SoC estimation
+- [ ] Balancing control (only while `BAL_EN_N` reads low, debounced, and the conditions in [Balancing switch](#balancing-switch) pass)
+- [ ] CAN1 telemetry and CAN2 summary messages
