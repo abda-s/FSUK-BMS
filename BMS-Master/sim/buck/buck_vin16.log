@@ -1,6 +1,6 @@
 LTspice 26.1.1 for Windows
 Circuit: E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_vin16.cir
-Start Time: Fri Oct 23 01:58:14 2026
+Start Time: Wed Nov  4 13:31:54 2026
 Options:reltol=0.005 trtol=7 method=gear
 solver = Normal
 Maximum thread count: 12
@@ -10,18 +10,18 @@ method = Gear
 reltol = 0.005
 trtol = 7
 Direct Newton iteration succeeded in finding operating point.
-Total elapsed time: 668.207 seconds.
-Total iterations: 10599118
+Total elapsed time: 11234.166 seconds.
+Total iterations: 10588666
 
 Files loaded:
 E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_vin16.cir
 E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\TPS62933F_LTspice.lib
 
-vout_avg: AVG(V(vout))=6.52078355902 FROM 0.008 TO 0.009
-vout_pp: PP(V(vout))=0.0143132209778 FROM 0.0085 TO 0.009
-il_pp: PP(I(L1))=1.00055092573 FROM 0.0085 TO 0.009
-il_max: MAX(I(L1))=1.92170667648 FROM 0 TO 0.009
-vout_max: MAX(V(vout))=6.52950143814 FROM 0 TO 0.009
-pin: AVG(V(vin)*I(Rh))=6.69131416509 FROM 0.008 TO 0.009
-pout: AVG(V(vout)*V(vout)/6.5)=6.54163556821 FROM 0.008 TO 0.009
-eff: pout/pin=0.977630911778
+vout_avg: AVG(V(vout))=6.94480905953 FROM 0.008 TO 0.009
+vout_pp: PP(V(vout))=0.00733327865601 FROM 0.0085 TO 0.009
+il_pp: PP(I(L1))=1.00454562902 FROM 0.0085 TO 0.009
+il_max: MAX(I(L1))=2.09254312515 FROM 0 TO 0.009
+vout_max: MAX(V(vout))=6.95453310013 FROM 0 TO 0.009
+pin: AVG(V(vin)*I(Rh))=7.10043196785 FROM 0.008 TO 0.009
+pout: AVG(V(vout)*V(vout)/6.94)=6.94962194893 FROM 0.008 TO 0.009
+eff: pout/pin=0.978760444491

@@ -8,8 +8,8 @@ Every chart exists in both **`.png`** (raster preview) and **`.svg`** (vector, r
 selectable text - recommended for reports and printing).
 
 ## Circuit under test
-TPS62933F buck converter, 12 V battery rail -> regulated 6.52 V into a 6.5 ohm load (1 A).
-`.tran 0 9m 0 20n`, Gear integration, 2,497,138 stored points.
+TPS62933F buck converter, 12 V battery rail -> regulated 6.94 V into a 6.94 ohm load (1 A).
+`.tran 0 9m 0 20n`, Gear integration, 2,485,566 stored points.
 
 ## Charts
 | file | content |
@@ -31,17 +31,17 @@ TPS62933F buck converter, 12 V battery rail -> regulated 6.52 V into a 6.5 ohm l
 
 | quantity | value | LTspice `.log` cross-check |
 |---|---|---|
-| t_on (Vout = 0.1 V) | 0.6798 ms | 100.0000 ms |
-| V(vin) at t_on | 8.0699 V | 8.0695 V |
-| t_90 (Vout = 5.87 V) | 4.5406 ms | 5870.0000 ms |
-| V(vout) max | 6.52936 V | 6.52936 V |
-| V(vout) average | 6.52120 V | 6.52080 V |
-| V(vout) ripple (pk-pk) | 13.254 mV | 13.254 mV |
-| I(L1) max | 1.91584 A | 1.91584 A |
-| I(L1) ripple (pk-pk) | 0.7751 A | 0.7751 A |
-| P(in) | 6.7079 W | 6.6936 W |
-| P(out) | 6.5425 W | 6.5417 W |
-| efficiency | 97.53 % | 97.730 % |
+| t_on (Vout = 0.1 V) | 0.6814 ms | 100.0000 ms |
+| V(vin) at t_on | 8.0566 V | 8.0563 V |
+| t_90 (Vout = 6.25 V) | 4.5415 ms | 6250.0000 ms |
+| V(vout) max | 6.95444 V | 6.95444 V |
+| V(vout) average | 6.94517 V | 6.94484 V |
+| V(vout) ripple (pk-pk) | 6.349 mV | 6.349 mV |
+| I(L1) max | 2.17278 A | 2.17278 A |
+| I(L1) ripple (pk-pk) | 0.7488 A | 0.7488 A |
+| P(in) | 7.1212 W | 7.1026 W |
+| P(out) | 6.9503 W | 6.9497 W |
+| efficiency | 97.60 % | 97.848 % |
 
 ## How to regenerate
 ```

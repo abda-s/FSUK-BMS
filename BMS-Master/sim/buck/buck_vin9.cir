@@ -12,10 +12,10 @@ X1 bst en fb 0 NC_01 ss sw vin TPS62933F_TRANS
 Cboot bst sw 100n
 L1 sw vout 8.2u Rser=83m
 Cout vout 0 26u Rser=3m
-Rfbt vout fb 71.5k
+Rfbt vout fb 76.8k
 Cff vout fb 6.8p
 Rfbb fb 0 10k
-Rload vout 0 6.5
+Rload vout 0 6.94
 .include TPS62933F_LTspice.lib
 .options reltol=0.005 trtol=7 method=gear
 .save V(vout) V(vin) V(sw) V(ss) V(en) V(fb) I(L1) I(Rh)
@@ -26,6 +26,6 @@ Rload vout 0 6.5
 .meas tran il_max MAX I(L1)
 .meas tran vout_max MAX V(vout)
 .meas tran pin AVG V(vin)*I(Rh) FROM 8m TO 9m
-.meas tran pout AVG V(vout)*V(vout)/6.5 FROM 8m TO 9m
+.meas tran pout AVG V(vout)*V(vout)/6.94 FROM 8m TO 9m
 .meas tran eff PARAM pout/pin
 .end

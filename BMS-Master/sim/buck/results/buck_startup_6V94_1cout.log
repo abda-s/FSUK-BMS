@@ -1,0 +1,30 @@
+LTspice 26.1.1 for Windows
+Circuit: E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_startup.net
+Start Time: Wed Nov  4 13:12:09 2026
+Options:reltol=0.005 trtol=7 method=gear
+solver = Normal
+Maximum thread count: 12
+tnom = 27
+temp = 27
+method = Gear
+reltol = 0.005
+trtol = 7
+Direct Newton iteration succeeded in finding operating point.
+Total elapsed time: 671.856 seconds.
+Total iterations: 10302912
+
+Files loaded:
+E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_startup.net
+E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\TPS62933F_LTspice.lib
+
+t_on: V(vout)=0.1 AT 0.000679643872568
+vin_on: V(vin)=8.06275102708 at 0.000679643872568
+t_90: V(vout)=6.25 AT 0.00453942378407
+vout_max: MAX(V(vout))=6.95642948151 FROM 0 TO 0.009
+il_max: MAX(I(L1))=1.98423182964 FROM 0 TO 0.009
+vout_avg: AVG(V(vout))=6.94483908055 FROM 0.008 TO 0.009
+vout_pp: PP(V(vout))=0.0132808685303 FROM 0.0085 TO 0.009
+il_pp: PP(I(L1))=0.756824910641 FROM 0.0085 TO 0.009
+pin: AVG(V(vin)*I(Rh))=7.10250410203 FROM 0.008 TO 0.009
+pout: AVG(V(vout)*V(vout)/6.94)=6.94968269047 FROM 0.008 TO 0.009
+eff: pout/pin=0.97848344621

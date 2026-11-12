@@ -1,6 +1,6 @@
 LTspice 26.1.1 for Windows
 Circuit: E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_loadstep.cir
-Start Time: Fri Oct 23 01:58:14 2026
+Start Time: Wed Nov  4 13:23:34 2026
 Options:reltol=0.005 trtol=7 method=gear
 solver = Normal
 Maximum thread count: 12
@@ -10,17 +10,19 @@ method = Gear
 reltol = 0.005
 trtol = 7
 Direct Newton iteration succeeded in finding operating point.
-Total elapsed time: 836.397 seconds.
-Total iterations: 11771649
+Warning: Simulation tolerance relaxed to achieve convergence from 5.0801237456449917e-03 to 5.0801237456450021e-03 seconds.
+Warning: Simulation tolerance relaxed to achieve convergence from 5.0801237456450021e-03 to 5.0801237456450125e-03 seconds.
+Total elapsed time: 498.940 seconds.
+Total iterations: 11674561
 
 Files loaded:
 E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_loadstep.cir
 E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\TPS62933F_LTspice.lib
 
-vout_pre: AVG(V(vout))=6.51965491641 FROM 0.0055 TO 0.006
-vout_dip: MIN(V(vout))=6.34410715103 FROM 0.006 TO 0.0065
-vout_1a: AVG(V(vout))=6.52079044936 FROM 0.0065 TO 0.007
-vout_over: MAX(V(vout))=6.66452121735 FROM 0.007 TO 0.0075
-vout_post: AVG(V(vout))=6.52080295726 FROM 0.0075 TO 0.008
-dip: vout_pre-vout_dip=0.175547765383
-over: vout_over-vout_1A=0.143730767991
+vout_pre: AVG(V(vout))=6.94360866087 FROM 0.0055 TO 0.006
+vout_dip: MIN(V(vout))=6.81792354584 FROM 0.006 TO 0.0065
+vout_1a: AVG(V(vout))=6.94486102382 FROM 0.0065 TO 0.007
+vout_over: MAX(V(vout))=7.0511803627 FROM 0.007 TO 0.0075
+vout_post: AVG(V(vout))=6.94480607699 FROM 0.0075 TO 0.008
+dip: vout_pre-vout_dip=0.125685115029
+over: vout_over-vout_1A=0.106319338886

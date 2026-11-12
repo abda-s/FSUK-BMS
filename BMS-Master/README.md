@@ -73,7 +73,7 @@ between them. Project options: net identifier scope **Hierarchical**,
 | `CONN` | `Connectors.SchDoc` | J1–J4: `PWR`, `CAN1`, `CAN2`, `SDC`, `ISENSE`, `STACK`, `CHG`, `MCU` (SWD) |
 | `PWR` | `Power.SchDoc` | `LV_IN` from J1 |
 | `CAN1`, `CAN2` | `CAN.SchDoc` (same file twice) | bus to J1, `CAN_MCU` to `MCU` |
-| `STACK` | `Stack_Interface.SchDoc` | `ISO_COMHP/N` to J2, `BQ97600_SPI` to `MCU` |
+| `STACK` | `Stack_Interface.SchDoc` | `ISO_COMH_P/N` to J2, `BQ97600_SPI` to `MCU` |
 | `ISENSE` | `Current_Sense.SchDoc` | `ISENSE_HI/LO` from J1, `ISENSE_ADC` to `MCU` |
 | `CHG` | `Charger.SchDoc` | `REGBUS_STOP` to J3, `CHG_EN` from `MCU` |
 | `SDC` | `AMS_SDC.SchDoc` | `AMS_OK` to J1, `AMS_OK_MCU` from `MCU` |
@@ -83,18 +83,25 @@ between them. Project options: net identifier scope **Hierarchical**,
 - **Harness for grouped logic signals** that always travel together between
   the same two sheets: `CAN_MCU` (TXD, RXD), `BQ97600_SPI`, `ISENSE_ADC`,
   `SWD` (SWDIO, SWCLK, SWO, NRST).
-- **Plain ports for differential pairs and single signals:** CAN H/L,
-  `ISO_COMHP/N`, `ISENSE_HI/LO`, `LV_IN`, `AMS_OK`, `REGBUS_STOP`, `CHG_EN`,
+- **Plain ports for differential pairs and single signals:** CAN P/N,
+  `ISO_COMH_P/N`, `ISENSE_HI/LO`, `LV_IN`, `AMS_OK`, `REGBUS_STOP`, `CHG_EN`,
   `AMS_OK_MCU`. A harness would hide the pair and the net names.
+- **Differential pairs end in `_P`/`_N`** (Altium only pairs nets with those
+  suffixes by default) and carry a Differential Pair directive
+  (`DifferentialPair = True`): `CAN_P`/`CAN_N` on `CAN.SchDoc`,
+  `COMH_P`/`COMH_N` and `ISO_COMH_P`/`ISO_COMH_N` on `Stack_Interface.SchDoc`.
+  CAN_H is `_P`, CAN_L is `_N`. The compiled project has four pairs:
+  `CAN1`, `CAN2`, `COMH`, `ISO_COMH`.
+  ([Altium: defining differential pairs](https://www.altium.com/documentation/altium-designer/schematic/defining-differential-pairs))
 - **Power nets are power ports** (`+12V`, `+5V`, `+3V3`, `GND`,
   `+5V_REGBUS`, `GND_REGBUS`), global, so they never need a sheet entry.
 - **One sheet for every off-board connector** (`Connectors.SchDoc`), so the
   cable pinout is on one page and matches [Connectors](#connectors).
 - **CAN is one channel drawn once** and placed twice (`CAN1`, `CAN2`). The
-  wiring compiles correctly, but the nets come out as `CAN_H_CAN1`,
-  `CAN_L_CAN1`, ... To get `CAN1_H`, `CAN1_L`, `CAN2_H`, `CAN2_L`, put those
-  net labels on the Top wires; they win over the sheet's `CAN_H`/`CAN_L`
-  because of Higher Level Names Take Priority.
+  Without help the nets would come out as `CAN_CAN1_P`, `CAN_CAN1_N`, ...
+  so `Top.SchDoc` has net labels `CAN1_P`, `CAN1_N`, `CAN2_P`, `CAN2_N` on the
+  CAN wires; they win over the sheet's `CAN_P`/`CAN_N` because of Higher Level
+  Names Take Priority.
 
 ## MCU selection: STM32G474
 
@@ -183,9 +190,33 @@ LQFP64: enough pins for everything above, with spares and the SWD pins.
 
 ### Schematic (`MCU_STM32.SchDoc`)
 
-![MCU_STM32.SchDoc: STM32G474RET6 with decoupling, 20 MHz crystal, NRST and BOOT0, balancing switch, and the harnesses and ports to the other sheets](docs/sch/mcu.png)
+![MCU_STM32.SchDoc: STM32G474RET6 with decoupling, 20 MHz crystal, NRST and BOOT0, every used pin labelled, balancing switch, inputs on the left and outputs and buses on the right](docs/sch/mcu.png)
 
-The I/O pins are not assigned yet (to-do: pick them in CubeMX).
+Sheet size A3. Layout follows signal flow:
+
+| Where | What |
+|---|---|
+| Middle | STM32G474RET6. Decoupling above it, crystal, NRST and BOOT0 to its left |
+| Left | Inputs from other sheets: `CAN1_MCU`, `CAN2_MCU`, `ISENSE_ADC`, and the balancing switch (`BAL_EN_N`) |
+| Right | Outputs `CHG_EN` and `AMS_OK_MCU`, and the `BQ97600_SPI` and `SWD` buses, next to the pins they use |
+
+- Every used pin has a short wire and a net label with the CubeMX name. The
+  harness entries and ports carry the same labels, so the connections are
+  by name.
+- The 29 unused pins have a no-ERC mark (X) and are left open.
+- NRST: 10k pull-up, 100 nF to GND (DS12288 Figure 27), and a reset
+  pushbutton to GND in parallel with the cap (XKB TS-1187A-B-A-B, SMD
+  5.1 × 5.1 mm, 160 gf, LCSC C318884). Pins 1–2 and 3–4 are joined inside the
+  switch; pin 2 goes to NRST, pin 4 to GND.
+
+### Pin configuration
+
+![STM32G474RET6 pin configuration: assigned pins in green with their labels](../Firmware/docs/pinout.svg)
+
+Pins are set in the CubeMX project
+[`Firmware/BMS-Master/BMS-Master.ioc`](../Firmware/BMS-Master/BMS-Master.ioc). The
+net labels on `MCU_STM32.SchDoc` use the same names. The full pin table and
+peripheral settings are in [`Firmware/README.md`](../Firmware/README.md#pins).
 
 ### Sources
 
@@ -243,7 +274,7 @@ On this board the transformer is the TS/LV isolation barrier: the BQ79600-Q1
 and STM32 are LV, and everything past the transformer is TS. Between modules
 it only isolates TS from TS (one module's voltage, ~67 V).
 
-![Stack_Interface.SchDoc: BQ79600-Q1 with SPI pull-ups, COMH filter and ESD diodes, SM91502ALE transformer to ISO_COMHP/N](docs/sch/stack-interface.png)
+![Stack_Interface.SchDoc: BQ79600-Q1 with SPI pull-ups, COMH filter and ESD diodes, SM91502ALE transformer to ISO_COMH_P/N](docs/sch/stack-interface.png)
 
 `Stack_Interface.SchDoc`: the BQ79600-Q1 (top) and the COMH link through the
 transformer to J2 (bottom).
@@ -375,9 +406,28 @@ soldered, so it uses the TCAN1042V-Q1: same vendor, same AEC-Q100 grade, same
 functional-safety documentation, but no SIC. **Check LCSC for the SOIC-8
 `TCAN1462VDRQ1` before v2** and switch if it's in stock.
 
-![CAN.SchDoc: CAN_MCU harness, TXD/RXD pull-ups and 0R series resistors, TCAN1042VDRQ1, split termination 2x 60R](docs/sch/can.png)
+![CAN.SchDoc: CAN_MCU harness, TXD/RXD pull-ups and 0R series resistors, TCAN1042VDRQ1, split termination 2x 60.4R with 4.7 nF, 20 pF bus filter caps, PESD2CAN24 TVS at the bus ports](docs/sch/can.png)
 
 `CAN.SchDoc` is one channel; `Top.SchDoc` uses it twice (CAN1, CAN2).
+
+### Circuit, checked against the TCAN1042-Q1 datasheet
+
+| Part | Value | Datasheet (SLLSES9D) |
+|---|---|---|
+| VCC | `+5V`, 4.7 µF + 100 nF | 4.5–5.5 V; 4.7 µF bulk + 0.1 µF bypass (section 11) |
+| VIO | `+3V3`, 100 nF | 3.0–5.5 V (Table 7.4); 0.1 µF at the pin |
+| STB | 0R to GND | Low = normal mode. STB has an internal pull-up, so left open the transceiver goes to standby (9.3.5) |
+| TXD, RXD | 10k pull-ups, 0R series | TXD pull-up optional, needed only for open-drain hosts; series resistors optional (12.1) |
+| Split termination | 2× 60.4 Ω 1206 0.25 W (UNI-ROYAL 1206W4F604JT5E, C57572) + **4.7 nF** to GND (Samsung CL05B472KB5NNNC, C84705) | Fig. 10-2. The 4.7 nF holds the bus common mode steady; the old 20 pF did nothing. 1206 because a CAN_H short to 12 V puts ~1.2 W in the pair |
+| Bus filter caps | 20 pF CAN_H→GND and CAN_L→GND, kept equal | Optional C4/C5 in Fig. 12-1; a mismatch would unbalance the bus |
+| TVS | Nexperia PESD2CAN24T-QR, SOT-23, AEC-Q101 (C28933048) | Figs. 10-3/10-4, section 12.1: TVS at the connector |
+
+**Termination:** only the two ends of each bus are terminated (10.2.2.1). A
+third 120 Ω makes 40 Ω, below the 50 Ω the driver is specified for
+(10.2.1.1). Fit both 60.4 Ω only on a bus where the BMS is an end node;
+leave both off otherwise, so the two lines stay balanced.
+
+**PCB:** TVS, bus caps and termination right at J1, in the signal path (12.1).
 
 ### Isolation: not required
 
@@ -503,7 +553,15 @@ because the output is ratiometric.
 
 ![Signal path from the DHAB output through the divider to the STM32 ADC](docs/current-sensor/3-signal-path.svg)
 
-![Current_Sense.SchDoc: 12k/18k dividers with 22 nF and 100 nF on ISENSE_HI and ISENSE_LO, supply monitor divider, ISENSE_ADC harness](docs/sch/current-sense.png)
+![Current_Sense.SchDoc: PESD5V0L2BT ESD diode on ISENSE_HI and ISENSE_LO at the ports, 12k/18k dividers with 22 nF and 100 nF, supply monitor divider, ISENSE_ADC harness](docs/sch/current-sense.png)
+
+**ESD:** TDSEMI PESD5V0L2BT (C46956345, SOT-23, the same part as on the
+stack interface) on `ISENSE_HI` and `ISENSE_LO` where they enter from J1.
+Bidirectional, 5 V working voltage, 5.8–8.3 V breakdown, ≤ 100 nA leakage
+at 5 V, 39 pF, 20 kV contact. The signals stay at or below 5 V, so the diode
+never conducts in use. 39 pF + 22 nF is far under the sensor's 100 nF load
+limit. On the PCB, place it at the connector pins. The sensor's `+5V` feed has
+no TVS (a 5 V-standoff part on a 5 V rail would leak).
 
 - 4.75 V max → 2.85 V at the pin; a short to 5 V → 3.0 V, so the two are distinguishable.
 - The 18 kΩ bottom resistor pulls a broken wire to 0 V, which the range check catches.
@@ -768,13 +826,14 @@ half dominant, no faults).
 
 ### Power tree
 
-![Power tree: LV 12 V, input protection, +12V, buck to ~6.5 V, 5 V LDO for +5V and 3.3 V LDO for +3V3, AMS_OK driver from +12V](docs/power/power-tree.svg)
+![Power tree: LV 12 V, input protection, +12V, buck to ~6.9 V, 5 V LDO for +5V and 3.3 V LDO for +3V3, AMS_OK driver from +12V](docs/power/power-tree.svg)
 
 The buck does the big drop efficiently; the two LDOs remove its ripple. That
 matters most for the current sensor, whose output is ratiometric to its 5 V
-supply. The buck output is **6.5 V** (6.52 V), not 5.3 V: the 5 V LDO
-(TLV761) has its specs written for 1.5 V of headroom (VIN = VOUT + 1.5 V), see
-[LDOs](#ldos-5v-3v3).
+supply. The buck output is **6.94 V**, not 5.3 V: the 5 V LDO (TLV761) has
+its specs written for 1.5 V of headroom (VIN = VOUT + 1.5 V), and the buck
+must stay above that with every tolerance at its worst, see
+[Output voltage and tolerances](#output-voltage-and-tolerances).
 
 Power-port names on every sheet: **`+12V`, `+5V`, `+3V3`** (`+5V_REGBUS` is the
 charger's isolated 5 V and stays separate). `Power.SchDoc` must use these
@@ -797,7 +856,8 @@ exact names.
 | NRST pull-up 10k, BOOT0 pull-down 10k | MCU_STM32 | 0.33 mA | 0 mA | NRST only during reset; BOOT0 sits low |
 | **Total** | | **≈ 58 mA** | **≈ 48 mA** | |
 
-LDO dissipation: (6.52 − 3.3) V × 58 mA ≈ **0.19 W**. Rate it **≥ 150 mA**.
+LDO dissipation: (6.94 − 3.3) V × 58 mA ≈ **0.21 W** (0.23 W with the buck at
+its 7.21 V maximum). Rate it **≥ 150 mA**.
 
 ### +5V (LDO from the buck)
 
@@ -809,18 +869,19 @@ LDO dissipation: (6.52 − 3.3) V × 58 mA ≈ **0.19 W**. Rate it **≥ 150 mA*
 | Current-sense dividers (3× 12k + 18k) | Current_Sense | 0.5 mA | 0.4 mA | 5 V / 30k + 2 × 4.75 V / 30k |
 | **Total** | | **≈ 175 mA** | **≈ 61 mA** | |
 
-LDO dissipation: (6.52 − 5) V × 175 mA ≈ **0.27 W**. Rate it **≥ 300 mA**, with
+LDO dissipation: (6.94 − 5) V × 175 mA ≈ **0.34 W** (0.39 W with the buck at
+its 7.21 V maximum). Rate it **≥ 300 mA**, with
 dropout ≤ 0.5 V at 175 mA. A CAN bus fault can push one transceiver to
 110 mA; the TCAN1042's dominant time-out stops a stuck TXD from holding it
 there.
 
-### Buck (6.5 V out)
+### Buck (6.94 V out)
 
 | | Worst | Typical |
 |---|---|---|
 | Output current: +5V LDO + +3V3 LDO | 233 mA | 109 mA |
-| Output power: 6.52 V × current | 1.52 W | 0.71 W |
-| Input power at 85 % efficiency | 1.79 W | 0.84 W |
+| Output power: 6.94 V × current | 1.62 W | 0.76 W |
+| Input power at 85 % efficiency | 1.90 W | 0.89 W |
 
 Rate the buck **≥ 0.5 A** output (2× margin), input range covering the LV
 battery (12 V nominal, up to ~16 V while charging).
@@ -829,17 +890,17 @@ battery (12 V nominal, up to ~16 V while charging).
 
 | Load | Sheet | Worst | Typical |
 |---|---|---|---|
-| Buck input: 1.79 W / 12 V (0.84 W typical) | Power | 149 mA | 70 mA |
+| Buck input: 1.90 W / 12 V (0.89 W typical) | Power | 158 mA | 74 mA |
 | AMS_OK driver: Q2 gate divider 12 V / 20k | AMS_SDC | 0.6 mA | 0.6 mA |
 | AMS_OK output into the SDC pull-down (2K2 + 10k worst) | AMS_SDC | 1.0 mA | 0.1 mA |
-| **Total from the LV supply** | | **≈ 151 mA, 1.8 W** | **≈ 71 mA, 0.85 W** |
+| **Total from the LV supply** | | **≈ 160 mA, 1.9 W** | **≈ 75 mA, 0.9 W** |
 
-At 11 V (low LV battery) the worst case rises to ≈ 165 mA.
+At 11 V (low LV battery) the worst case rises to ≈ 175 mA.
 
 **Not on our budget:** the 10k Reg Bus pull-up on `Charger.SchDoc` (0.5 mA)
 is powered by the charger's own `+5V_REGBUS`, not by this board.
 
-**Still to confirm on the bench:** buck efficiency at 6.5 V / 0.2 A, BQ79600
+**Still to confirm on the bench:** buck efficiency at 6.94 V / 0.2 A, BQ79600
 VIO current.
 
 Sources: TCAN1042-Q1 datasheet (Supply Characteristics), BQ79600-Q1
@@ -876,7 +937,7 @@ Between the LV connector (`LV_IN`) and the protected `+12V` rail, on
 ### Sizing
 
 - **Fuse: slow-blow ~1 A.**
-  - Worst-case load is 151 mA (see [+12V](#12v-lv-input)), so 1 A gives
+  - Worst-case load is 160 mA (see [+12V](#12v-lv-input)), so 1 A gives
     plenty of margin.
   - The hot-plug simulation shows 58.7 A of inrush for about 8 µs, which is
     roughly 58.7² × 8 µs / 3 ≈ 0.01 A²s.
@@ -885,7 +946,7 @@ Between the LV connector (`LV_IN`) and the protected `+12V` rail, on
     JDTfuse JFC2410-1100TS), so it only opens on a real fault.
   - DC rating (125 V) is well above our 16 V.
 - **D1 SS34 instead of a P-MOSFET.**
-  - At 151 mA it drops about 0.3–0.4 V and dissipates about 0.06 W.
+  - At 160 mA it drops about 0.3–0.4 V and dissipates about 0.06 W.
   - Its 80 A surge rating covers the 58.7 A inrush.
   - A P-MOSFET would save the drop, but needs a gate zener and resistor;
     it's only worth it above an amp or two.
@@ -928,7 +989,7 @@ Sources: Littelfuse 0452 series and SMBJ series ratings from LCSC listings
 
 ## Buck converter: TPS62933F
 
-12 V LV battery → **6.5 V**, feeding the `+5V` and `+3V3` LDOs (see
+12 V LV battery → **6.94 V**, feeding the `+5V` and `+3V3` LDOs (see
 [Power tree](#power-tree)). Rated 1 A for a 233 mA worst-case load.
 
 ### Part
@@ -956,9 +1017,9 @@ load, two LDOs from 12 V would burn the whole voltage drop as heat:
 | **Total at 12 V** | | **1.7 W** |
 | **Total at 16 V** (charging) | | **2.7 W** |
 
-That needs big packages and copper. With the buck to 6.5 V first, the LDOs
-only drop 1.5–3.2 V, which is 0.46 W together, and the buck itself loses about
-0.27 W at 85 % efficiency.
+That needs big packages and copper. With the buck to 6.94 V first, the LDOs
+only drop 1.9–3.6 V, which is 0.55 W together, and the buck itself loses about
+0.28 W at 85 % efficiency.
 
 **The options.** The main alternative was the **TI LMR51430**, which is what
 the LSU BMS motherboard uses (see `FSAE_LSU_BMS/MotherBoard`). We also
@@ -989,7 +1050,7 @@ considered the other members of our part's family.
   can move the frequency later (for example away from a noise problem
   measured on the bench) without changing the part. The LMR51430 has neither.
 - **Lower switch resistance.** 76 / 32 mΩ against 120 / 70 mΩ. At 0.23 A this
-  is a small saving; it matters more if the 6.5 V rail ever carries more load.
+  is a small saving; it matters more if the buck rail ever carries more load.
 - **We have a working design and a verified simulation.** WEBENCH generated the
   design, and the TI model runs in LTspice with results that match the
   datasheet.
@@ -1017,7 +1078,7 @@ Load currents from [Power budget](#power-budget).
 `Power.SchDoc`. RT is left open (500 kHz). The LTspice copy of this circuit is
 in [Simulation](#simulation-ltspice).
 
-Made in TI WEBENCH for 9–16 V in → 6 V at 1 A, then raised to 6.5 V by changing R_FBT (see the BOM table). The design files are in
+Made in TI WEBENCH for 9–16 V in → 6 V at 1 A, then raised to 6.94 V by changing R_FBT (see the BOM table). The design files are in
 `Reference Docs/Master/Power/WEBENCH TPS62933F (9-16V to 6V 1A)/`. We kept the
 WEBENCH values except where a part wasn't on LCSC or a better one was. The
 final list is `LCSC BOM.csv` in that folder.
@@ -1040,10 +1101,51 @@ final list is `LCSC BOM.csv` in that folder.
 | C_boot | 100 nF | CL05B104KO5NNNC (C1525) | bootstrap supply for the high-side gate drive |
 | C_ss | 33 nF | FCC0402B333K500AT (C7419416) | soft start, ~4–5 ms ramp |
 | L1 | 8.2 µH, 83 mΩ max, Isat 2.74 A | APV ANR5040T8R2M (C7427138) | WEBENCH's NIC part isn't on LCSC; ripple ≈ 0.8 A p-p, peak 1.46 A at 1 A load |
-| C_out | 47 µF 16 V X5R 1210 | CL32A476KOJNNNE (C2932477) | output ripple |
+| C_out | 2× 47 µF 16 V X5R 1210 | CL32A476KOJNNNE (C2932477) | output ripple; the second one stops the loop oscillating at 9 V input (see [More simulations](#more-simulations-load-step-and-input-range)) |
 | C_ff | 6.8 pF C0G | CL05C6R8CB5NNNC (C318598) | feed-forward across R_FBT: more phase margin, smaller dip on a load step |
-| R_FBT / R_FBB | 71.5k / 10k | C43534 / C25744 | Vout = 0.8 × (1 + 71.5k/10k) = **6.52 V**. Was 64.9k (5.99 V); raised so the 5 V LDO gets the 1.5 V headroom its specs assume |
+| R_FBT / R_FBB | 76.8k / 10k, 1 % | C26987 (0402WGF7682TCE) / C25744 | Vout = 0.8 × (1 + 76.8k/10k) = **6.94 V**. History: 64.9k (5.99 V, WEBENCH) → 71.5k (6.52 V) → 76.8k, so the 5 V LDO keeps 1.5 V of headroom with all tolerances at their worst, see below |
 | R_ENT / R_ENB | 511k / 86.6k | C64042 / C19709 | UVLO: on at 8.0 V, off at 7.0 V |
+
+
+### Output voltage and tolerances
+
+The 5 V LDO's specs (accuracy, PSRR, line regulation) are given at
+**VIN = VOUT + 1.5 V** (TLV761 datasheet, Electrical Characteristics). The buck
+has to stay above that even when every tolerance is at its worst.
+
+**What the buck has to deliver:**
+
+| | Value | Source |
+|---|---|---|
+| Highest 5 V LDO output | 5.0875 V (+1.75 % over temperature) | TLV761, Electrical Characteristics |
+| Plus 1.5 V of headroom | **≥ 6.59 V at the LDO input** | |
+
+**How low the buck can go:**
+
+| Tolerance | Effect on Vout |
+|---|---|
+| FB reference 784–816 mV (T_J −40 to 150 °C; 788–812 mV at 0–85 °C) | ±2 % |
+| R_FBT and R_FBB 1 %, worst direction (R_FBT −1 %, R_FBB +1 %) | −1.75 % / +1.78 % |
+| **Together** | **0.963 to 1.038 × nominal** |
+
+| R_FBT (R_FBB = 10k) | Nominal | Worst low | Worst high | Headroom at worst low |
+|---|---|---|---|---|
+| 71.5k (before) | 6.52 V | 6.28 V | 6.77 V | 1.19 V ❌ |
+| 75.0k | 6.80 V | 6.55 V | 7.06 V | 1.46 V ❌ |
+| **76.8k (chosen)** | **6.94 V** | **6.69 V** | **7.21 V** | **1.60 V ✅** |
+
+- The output ripple (about 15 mV) and load steps at our ~0.2 A load stay
+  inside the 0.1 V left over.
+- With 0.1 % resistors, 75k (6.80 V) would also pass. 1 % parts and 76.8k
+  are cheaper and do the same job.
+- **Cost of the higher voltage:** 0.39 W in the 5 V LDO at the 7.21 V maximum
+  (about +37 °C), 0.23 W in the 3.3 V LDO; +12 V worst case goes from 151 to
+  160 mA.
+- **Low input:** the buck needs more input to regulate. At 9 V it runs at
+  77 % duty (was 72 %). With 98 % maximum duty and the 140 ns minimum
+  off-time at 500 kHz it stops regulating at about 7.5 V input, which is a
+  flat 12 V battery.
+- The net is still named `+6V5` on `Power.SchDoc`.
 
 **UVLO.** The buck only starts once the battery is above 8 V and stops below
 7 V. This stops it running from a flat or sagging LV battery. WEBENCH's
@@ -1096,22 +1198,24 @@ about 6 minutes.
   inductance can ring with the input caps at power-on.
 - Ceramics at their capacitance under DC voltage (estimates):
   - C_in: 2 × 10 µF → 12 µF at 12 V.
-  - C_out: 47 µF → 26 µF at 6.5 V.
-- 1 A load (6.5 Ω).
+  - C_out: 2 × 47 µF → 52 µF at 6.94 V (1.5 mΩ, two ESRs in parallel).
+- 1 A load (6.94 Ω).
 - L1 at its maximum DCR.
 
-**Results: start-up at 12 V, 1 A load** (buck at 6.52 V; the 6.0 V run is kept in `sim/buck/results/buck_startup_6V0.log`).
+**Results: start-up at 12 V, 1 A load** (buck at 6.94 V with 2× 47 µF.
+Earlier runs are kept in `sim/buck/results/`: `buck_startup_6V0.log`,
+`buck_startup_6V5.log` and `buck_startup_6V94_1cout.log`.)
 
 | Check | Target | Result |
 |---|---|---|
-| Turn-on voltage (UVLO) | 8.0 V | **8.07 V** |
-| Rise to 90 % (5.87 V) after turn-on | smooth, ~5 ms | **3.86 ms**, no overshoot |
-| Output peak | no overshoot | **6.529 V** (+0.13 %) |
-| Output (steady state) | 6.52 V | **6.521 V** |
-| Output ripple | ≤ 30 mV p-p | **13.3 mV p-p** |
-| Inductor ripple | ~0.73 A p-p (calculated) | **0.78 A p-p** |
-| Inductor peak | < 2.74 A (Isat) | **1.92 A**, during start-up (30 % margin) |
-| Efficiency | | 97.7 %, which is **too high**: see below |
+| Turn-on voltage (UVLO) | 8.0 V | **8.06 V** |
+| Rise to 90 % (6.25 V) after turn-on | smooth, ~5 ms | **3.86 ms**, no overshoot |
+| Output peak | no overshoot | **6.954 V** (+0.14 %) |
+| Output (steady state) | 6.94 V | **6.945 V** |
+| Output ripple | ≤ 30 mV p-p | **6.3 mV p-p** (13.3 mV with one 47 µF) |
+| Inductor ripple | ~0.71 A p-p (calculated) | **0.75 A p-p** |
+| Inductor peak | < 2.74 A (Isat) | **2.17 A**, during start-up (21 % margin) |
+| Efficiency | | 97.8 %, which is **too high**: see below |
 
 ![Start-up overview: VIN, VOUT, SS and EN over 9 ms](sim/buck/charts/01_startup_overview.svg)
 
@@ -1140,45 +1244,52 @@ summary dashboard) are in [`sim/buck/charts/`](sim/buck/charts/).
 
 ### More simulations: load step and input range
 
-Netlists in `sim/buck/`: `buck_loadstep.cir`, `buck_vin9.cir`,
-`buck_vin11.cir`, `buck_vin16.cir`, plus the comparison runs
-`buck_vin9_6V0.cir` (old 6.0 V output) and `buck_vin9_2cout.cir`
-(2× 47 µF). Each log has the measurements at the end. Hot-plug results are in
+All runs below use the board as built: **6.94 V output (R_FBT 76.8k) and
+2× 47 µF** on the output (52 µF effective, 1.5 mΩ), 1 A load (6.94 Ω).
+Netlists in `sim/buck/`: `buck_loadstep.cir`, `buck_vin9_2cout.cir`,
+`buck_vin11.cir`, `buck_vin16.cir`, and `buck_vin9.cir` (one 47 µF, kept for
+comparison). Each log has the measurements at the end. The 6.52 V results
+are kept in `sim/buck/results/*_6V5.log`. Hot-plug results are in
 [LV input protection](#lv-input-protection).
 
 **Load step, 12 V in:** 0.1 A → 1 A at 6 ms, back to 0.1 A at 7 ms.
 
 | Check | Result | |
 |---|---|---|
-| Dip when the load jumps to 1 A | 176 mV (2.7 %) | ✅ |
-| Overshoot when it drops back | 144 mV (2.2 %) | ✅ |
-| Settles to | 6.521 V | ✅ |
+| Dip when the load jumps to 1 A | 126 mV (1.8 %) | ✅ |
+| Overshoot when it drops back | 106 mV (1.5 %) | ✅ |
+| Settles to | 6.945 V | ✅ |
+
+With one 47 µF at 6.52 V the dip was 176 mV and the overshoot 144 mV.
 
 **Input range, 1 A load:**
 
-| Input | Output C | Output | Output ripple | Inductor ripple (calc.) | |
-|---|---|---|---|---|---|
-| 16 V | 1× 47 µF | 6.521 V | 14.3 mV | 1.00 A (1.00 A) | ✅ |
-| 11 V | 1× 47 µF | 6.521 V | 14.0 mV | 0.71 A (0.65 A) | ✅ |
-| **9 V** | **1× 47 µF** | 6.520 V | **275 mV** | **2.50 A** (0.44 A) | ❌ **loop oscillates** |
-| 9 V, old 6.0 V output | 1× 47 µF | 5.994 V | 311 mV | 3.02 A | ❌ same problem |
-| **9 V** | **2× 47 µF** | 6.521 V | **5.4 mV** | **0.46 A** (0.44 A) | ✅ |
+| Input | Output C | Output | Output ripple | Inductor ripple (calc.) | Inductor peak | |
+|---|---|---|---|---|---|---|
+| 16 V | 2× 47 µF | 6.945 V | 7.3 mV | 1.00 A (0.96 A) | 2.09 A | ✅ |
+| 11 V | 2× 47 µF | 6.945 V | 6.1 mV | 0.66 A (0.63 A) | 2.12 A | ✅ |
+| **9 V** | **2× 47 µF** | 6.945 V | **4.9 mV** | **0.40 A** (0.39 A) | 2.22 A | ✅ |
+| 9 V | 1× 47 µF | 6.945 V | **208 mV** | **1.92 A** (0.39 A) | 2.13 A | ❌ loop oscillates |
 
-**At 9 V input the control loop oscillates.**
-- The on-time swings between about 0.9 and 2.9 µs over roughly 10 switching
-  cycles, instead of a steady 1.46 µs.
-- It isn't caused by the 6.5 V change: the original 6.0 V WEBENCH design
-  does the same.
-- It only shows at low input, which means high duty cycle (72 %). With one
-  47 µF (about 26 µF left at 6.5 V because of DC bias), the loop runs out of
-  phase margin there.
-- **A second 47 µF on the output fixes it.** The inductor ripple then matches
-  the hand calculation (steady switching), and the output ripple halves.
+Calculated inductor ripple: ΔI = (V_in − V_out) · V_out / (V_in · L · f),
+with L = 8.2 µH and f = 500 kHz. The inductor peak is the highest current
+in the run, which is during start-up, while the output caps charge. The
+highest is 2.22 A against the inductor's 2.74 A saturation current (19 %
+margin).
 
-**Recommendation: add a second 47 µF 16 V X5R 1210 (CL32A476KOJNNNE, C2932477)
-on the buck output, in parallel with the first.** This comes from the patched
-TI model, not hardware, so confirm on the bench: drop the input to 9 V and
-watch SW and the output on a scope.
+**Why the second 47 µF.**
+- With one 47 µF the control loop oscillates at 9 V input. The on-time swings
+  between about 0.9 and 2.9 µs over roughly 10 switching cycles, instead of
+  a steady value.
+- It shows up only at low input, which means high duty cycle (77 % at 9 V and
+  6.94 V). With one 47 µF (about 26 µF left after DC bias) the loop runs out
+  of phase margin there. The original 6.0 V WEBENCH design did the same, so
+  it isn't caused by raising the output.
+- With 2× 47 µF the inductor ripple matches the hand calculation (steady
+  switching) at every input.
+- **The second 47 µF is on `Power.SchDoc`** (CL32A476KOJNNNE, C2932477). This
+  comes from the patched TI model, not hardware, so confirm on the bench:
+  drop the input to 9 V and watch SW and the output on a scope.
 
 Also open: the UVLO lets the buck run down to 7 V input, but a 12 V LV
 battery is flat long before that. Raising the UVLO to switch off around 10 V
@@ -1186,7 +1297,7 @@ is a two-resistor change if the bench shows trouble at low input.
 
 ## LDOs (+5V, +3V3)
 
-Two LDOs take the buck's 6.5 V down to `+5V` and `+3V3` and clean off the buck's
+Two LDOs take the buck's 6.94 V down to `+5V` and `+3V3` and clean off the buck's
 ripple. **Chosen: TI TLV761.** We use the **5 V version, TI TLV76150DCYR**,
 for `+5V` and the **3.3 V version, TI TLV76133DCYR**, for `+3V3`.
 
@@ -1200,6 +1311,28 @@ for `+5V` and the **3.3 V version, TI TLV76133DCYR**, for `+3V3`.
 On `Power.SchDoc`: each LDO takes `+6V5` on IN (pin 3) and has its OUT pin 2 tied to
 the tab (pin 4). C_IN and C_OUT are both 2.2 µF 25 V X7R 0805 (CL21B225KAFNNNE, C19110),
 per the datasheet's 2.2 µF nominal C_OUT and 1 µF nominal C_IN.
+
+### Capacitor check (TLV761 datasheet, Recommended Operating Conditions and 7.1)
+
+| Requirement | Datasheet | Ours |
+|---|---|---|
+| C_OUT | 1–220 µF, 2.2 µF nominal, ≥ 0.47 µF effective | 2.2 µF, ~1.1 µF effective at the 50 % DC-bias loss the datasheet assumes (7.1.1) |
+| Total C on the rail (counts as C_OUT) | ≤ 220 µF | `+5V` ≈ 12 µF (2.2 µF + 2× CAN 4.7 µF + 100 nF + 47 nF); `+3V3` ≈ 10 µF (2.2 µF + MCU decoupling + CAN VIO) |
+| C_OUT ESR | 2–500 mΩ, ceramic | X7R MLCC |
+| C_IN | Not needed for stability; 1 µF nominal, ≥ 0.47 µF effective recommended, no maximum | 2.2 µF, plus the buck's 2× 47 µF on the same node |
+
+The 1 µF C_IN in the datasheet's Figure 7-2 is the typical value, not a
+limit. The input cap is outside the regulation loop, so a larger one can't
+cause oscillation; it lowers the source impedance, which helps transients
+and high-frequency PSRR (7.1.2). Using 2.2 µF on both sides keeps one part
+number.
+
+- **Layout (7.4):** caps at the pins, C_OUT ground straight to the LDO GND
+  pin, input and output grounds joined at the GND pin.
+- **Reverse current (7.1.3):** V_OUT must not exceed V_IN + 0.3 V. With
+  ~98 µF on the input and ~12 µF on each output, the input falls slower at
+  power-off. Don't back-feed `+3V3` or `+5V` from outside while the board
+  is off (ST-LINK only senses VTref, so it's fine).
 
 ### Reading the output voltage from the part number
 
@@ -1233,10 +1366,10 @@ describes the whole family. That's why it's easy to miss.
 
 | Requirement | Value | Why |
 |---|---|---|
-| Input max | **≥ 16 V** | 6.5 V in normally, but a buck with a shorted high-side switch puts 12–16 V on the LDO. It must survive and keep regulating so nothing downstream sees it. |
+| Input max | **≥ 16 V** | 6.94 V in normally, but a buck with a shorted high-side switch puts 12–16 V on the LDO. It must survive and keep regulating so nothing downstream sees it. |
 | Output | **fixed 5.0 V / 3.3 V** | No external divider, so no resistor tolerance added on top. |
 | Accuracy | **±1–2 % over temperature** | The current sensor's output is ratiometric to 5 V. |
-| Dropout | **< 0.5 V at 175 mA** (5 V rail) | The buck was 6 V when we searched (1 V of headroom); it's now 6.5 V. |
+| Dropout | **< 0.5 V at 175 mA** (5 V rail) | The buck was 6 V when we searched (1 V of headroom); it's now 6.94 V. |
 | Current | ≥ 800 mA rating | Worst-case loads are 175 mA (`+5V`) and 58 mA (`+3V3`). |
 | PSRR at 500 kHz | **≥ 30 dB** | Knocks the buck's 13 mV ripple below half an ADC step (0.4 mV); see [PSRR](#psrr-how-much-buck-ripple-gets-through). |
 | Package | **SOT-223 or similar leaded** | Hand soldered; no WSON/QFN. |
@@ -1265,7 +1398,7 @@ All datasheets are in `Reference Docs/Master/LDO/`.
 | TI TPS7A88 (dual) | 1.4–6.5 V | adjustable only | 2 × 1 A | ±1 % | 40 dB @ 1 MHz | WQFN | ✗ 6.5 V max, adjustable, package |
 
 **The input limit eliminated most of them.** Any part rated for 6.0–6.5 V
-would run at or over its limit from our 6.5 V and die if the buck fails. That alone
+would run over its limit from our 6.94 V and die if the buck fails. That alone
 removes AP7361C, AP2114, CJ6109, RP131x, RS3215, LP5912, RTQ2539A and TPS7A88,
 even the ones with good PSRR. The old x1117 regulators (LM1117, ZLDO1117Q)
 take 15–18 V but need about 1.2 V of dropout, more than the 1 V we have.
@@ -1282,7 +1415,7 @@ take 15–18 V but need about 1.2 V of dropout, more than the 1 V we have.
   500 kHz. That's about 13 dB above the 30 dB we need. It's the only
   hand-solderable part that publishes a high-frequency PSRR figure.
 - **SOT-223** with the standard x1117 pinout: 1 GND, 2 OUT (and tab), 3 IN.
-- **1 A, 95.4 °C/W:** 0.27 W (5 V rail) gives about +25 °C; 0.19 W (3.3 V rail) about +18 °C.
+- **1 A, 95.4 °C/W:** 0.34 W (5 V rail) gives about +32 °C (+37 °C at the buck's 7.21 V maximum); 0.21 W (3.3 V rail) about +20 °C.
 - **Stable with a 1 µF ceramic output capacitor** (1–220 µF allowed).
 
 **Caveats:**
@@ -1292,8 +1425,12 @@ take 15–18 V but need about 1.2 V of dropout, more than the 1 V we have.
   - It would still regulate (dropout is at most 0.28 V at 175 mA).
   - But accuracy, line regulation and PSRR are only characterised at 1.5 V
     of headroom, and PSRR drops as headroom shrinks (figure 5-18).
-  - **So the buck was raised to 6.52 V** (R_FBT 64.9k → 71.5k). Every spec
-    now applies as written, at a cost of 0.27 W in the 5 V LDO and 0.19 W in
+  - **So the buck was raised**, first to 6.52 V (R_FBT 64.9k → 71.5k), then to
+    **6.94 V** (76.8k) once the buck's reference and resistor tolerances were
+    counted: 6.52 V could drop to 6.28 V, only 1.19 V above the LDO's highest
+    output. At 6.94 V the worst case is 6.69 V, 1.6 V of headroom (see
+    [Output voltage and tolerances](#output-voltage-and-tolerances)). Every
+    spec now applies as written, at a cost of 0.34 W in the 5 V LDO and 0.21 W in
     the 3.3 V LDO.
 - **Foldback current limit.** With the output shorted, the TLV761 limits to
   150 mA min / 250 mA typ / 350 mA max, rising back towards 1.1 A as the
@@ -1452,13 +1589,13 @@ Board header (left) and cable receptacle (right).
 
 | Pin | Net | Goes to | Notes |
 |---|---|---|---|
-| 1 | `LV_IN` | LV battery (or the charging battery) | 11–16 V, up to 151 mA, into the [input protection](#lv-input-protection) |
+| 1 | `LV_IN` | LV battery (or the charging battery) | 11–16 V, up to 160 mA, into the [input protection](#lv-input-protection) |
 | 2 | GND | LV battery − | |
-| 3 | `CAN1_H` | CAN1 (full telemetry) | Twisted pair with pin 4 |
-| 4 | `CAN1_L` | CAN1 | |
+| 3 | `CAN1_P` (CAN_H) | CAN1 (full telemetry) | Twisted pair with pin 4 |
+| 4 | `CAN1_N` (CAN_L) | CAN1 | |
 | 5 | GND | CAN1 reference | |
-| 6 | `CAN2_H` | CAN2 (summary to ECU/dashboard) | Twisted pair with pin 7 |
-| 7 | `CAN2_L` | CAN2 | |
+| 6 | `CAN2_P` (CAN_H) | CAN2 (summary to ECU/dashboard) | Twisted pair with pin 7 |
+| 7 | `CAN2_N` (CAN_L) | CAN2 | |
 | 8 | GND | CAN2 reference | |
 | 9 | `AMS_OK` | SDC board input | 12 V = OK, through the 2K2 output resistor |
 | 10 | GND | SDC ground | Return for `AMS_OK` |
@@ -1485,8 +1622,8 @@ pins so the twisted pairs stay twisted up to the connector.
 
 | Pin | Net | Notes |
 |---|---|---|
-| 1 | `ISO_COMHP` | To the first BMS-Module, after the SM91502AL transformer |
-| 2 | `ISO_COMHN` | Twisted pair with pin 1 |
+| 1 | `ISO_COMH_P` | To the first BMS-Module, after the SM91502AL transformer |
+| 2 | `ISO_COMH_N` | Twisted pair with pin 1 |
 
 - **One connector per daisy-chain port.** This version only uses COMH (a
   line to the modules). Version 2 adds the **COML** port for a ring: the
@@ -1585,34 +1722,42 @@ from LCSC, 2026-10-23. Images: LCSC product photos.
 - [x] Transformer marked "same part on both ends" on the schematic
 - [x] Balancing master switch on `MCU_STM32.SchDoc`, see [Balancing switch](#balancing-switch)
 - [x] Power budget, see [Power budget](#power-budget)
-- [x] Buck selected and designed: TPS62933F, 6.5 V 1 A, LCSC BOM; start-up simulated in LTspice, see [Buck converter](#buck-converter-tps62933f)
+- [x] Buck selected and designed: TPS62933F, 6.94 V 1 A, LCSC BOM; start-up simulated in LTspice, see [Buck converter](#buck-converter-tps62933f)
 - [x] LDOs selected: TI TLV76150DCYR (`+5V`) and TI TLV76133DCYR (`+3V3`), SOT-223, see [LDOs](#ldos-5v-3v3)
 - [x] LV input protection on `Power.SchDoc`: 1 A slow-blow fuse, SS34 reverse-polarity diode, SMBJ16A TVS, see [LV input protection](#lv-input-protection)
 - [x] Power while charging decided: the board runs from a separate battery like the LV battery, through the same `LV_IN` input, see [LV input protection](#lv-input-protection)
 - [x] Connectors chosen: Molex Micro-Fit 3.0 right-angle for J1 (LV, 2×8) and J2 (daisy chain, 2-pin), CONNFLY DS1133-S60BPX RJ12 for J3, vertical 2×5 1.27 mm SWD for J4, see [Connectors](#connectors)
-- [x] `Power.SchDoc`: TPS62933F buck drawn and wired (6.5 V, R_FBT 71.5k), see [Buck converter](#buck-converter-tps62933f)
+- [x] `Power.SchDoc`: TPS62933F buck drawn and wired (6.94 V, R_FBT 76.8k, raised from 6.52 V for tolerances), see [Buck converter](#buck-converter-tps62933f)
 - [x] `Power.SchDoc`: TLV76150DCYR and TLV76133DCYR wired with 2.2 µF in/out caps; `+5V` and `+3V3` reach every sheet, see [LDOs](#ldos-5v-3v3)
-- [x] Buck simulations: start-up, load step, 9 / 11 / 16 V input, hot-plug with and without the bulk cap, see [Simulation](#simulation-ltspice) and [More simulations](#more-simulations-load-step-and-input-range)
+- [x] `Power.SchDoc`: second 47 µF on the buck output (stops the 9 V loop oscillation in simulation)
+- [x] Buck simulations: start-up, load step, 9 / 11 / 16 V input, hot-plug with and without the bulk cap (rerun at 6.94 V with 2× 47 µF), see [Simulation](#simulation-ltspice) and [More simulations](#more-simulations-load-step-and-input-range)
 - [x] `Connectors.SchDoc`: J1–J4 placed and wired to ports (SWD as a harness), see [Connectors](#connectors)
 - [x] `MCU_STM32.SchDoc`: ports and harnesses for every link on `Top.SchDoc`
+- [x] `MCU_STM32.SchDoc`: NRST capacitor 2.2 µF → 100 nF (Samsung CL05B104KO5NNNC, LCSC C1525). DS12288 Figure 27 recommends 0.1 µF; with 2.2 µF internal resets may not pull NRST below V_IL
+- [x] STM32 pins selected and CubeMX project set up in [`Firmware/BMS-Master`](../Firmware/README.md) (170 MHz, FDCAN1/2, SPI1, ADC1, GPIOs; builds clean)
+- [x] `MCU_STM32.SchDoc`: A3, every used pin wired to its net label (19 pins), unused pins no-ERC, inputs left and outputs/buses right; compile checked
+- [x] `CAN.SchDoc` checked against the TCAN1042-Q1 datasheet: split cap 20 pF → 4.7 nF, termination 60R 0603 → 60.4 Ω 1206, PESD2CAN24T-QR TVS added, see [CAN transceiver selection](#can-transceiver-selection)
+- [x] `Current_Sense.SchDoc`: PESD5V0L2BT ESD diode on `ISENSE_HI`/`ISENSE_LO`
+- [x] LDO capacitors checked against the TLV761 datasheet, see [LDOs](#ldos-5v-3v3)
+- [x] `MCU_STM32.SchDoc`: dashed section boxes with short titles
+- [x] Old notes on `CAN.SchDoc` and `Current_Sense.SchDoc` updated
+- [x] CAN termination per channel decided
+- [x] `MCU_STM32.SchDoc`: reset pushbutton on NRST (XKB TS-1187A-B-A-B, LCSC C318884)
+- [x] `Connectors.SchDoc` notes: J1 contents and spare pins 15–16, CAN pairs on adjacent pins, J2/J3 on the TS side (EV 4.3.5, Table 5 spacing, never tie `GND_REGBUS` to GND), RJ12 pins 3/5/6 unused, J4 debug only
+- [x] Notes in the boxes on `MCU_STM32.SchDoc` (pin map, inputs, outputs, SPI/SWD, balancing switch) and `Power.SchDoc` (input protection, buck output range and caps, LDO caps)
+- [x] Differential pairs: nets renamed to `_P`/`_N` (`CAN_P/N`, `CAN1_P/N`, `CAN2_P/N`, `COMH_P/N`, `ISO_COMH_P/N`) and directives placed; compile shows 4 pairs
+- [x] `Top.SchDoc`: net labels `CAN1_P`, `CAN1_N`, `CAN2_P`, `CAN2_N` on the CAN wires; pairs are now named `CAN1`, `CAN2`, `COMH`, `ISO_COMH`
+- [x] Sheets tidied: boxes, titles and notes on `CAN.SchDoc` (from MCU, transceiver, bus), `Current_Sense.SchDoc` (sensor input, dividers, to MCU, sensor supply) and `Stack_Interface.SchDoc` (BQ79600-Q1 bridge, COMH filter/ESD/isolation); `Charger.SchDoc` and `AMS_SDC.SchDoc` are small and keep their notes without boxes
+- [x] `Top.SchDoc`: "Harnesses" note explaining the rule and each harness (`CAN_MCU`, `BQ97600_SPI`, `ISENSE_ADC`, `SWD`)
+- [x] Project annotated: one sequence per prefix, sheet by sheet (MCU, Power, CAN, Current_Sense, Stack_Interface, Charger, AMS_SDC), top to bottom then left to right; J1–J4 kept. C1–C46, R1–R38, U1–U8, D1–D4, Q1–Q2, SW1–SW2, F1, L1, T1, X1. CAN parts compile as `U5_CAN1`/`U5_CAN2` etc.; 123 physical parts, no duplicates
+- [x] CAN, ADC and memory checked in CubeMX and DS12288: STM32G474RET6 (512 KB flash), FDCAN1 + FDCAN2 at 500 kbit/s, ADC1 slow channels IN6–IN8 with 247.5-cycle sampling, see [`Firmware/README.md`](../Firmware/README.md#settings)
 
 ### To do
 
 Schematic:
 
-- [ ] `Power.SchDoc`: add a second 47 µF (C2932477) on the buck output; fixes the loop oscillation at 9 V input in simulation (see [More simulations](#more-simulations-load-step-and-input-range))
-- [ ] `Power.SchDoc`: annotate (designators are still `U?`, `C?`, `R?`)
-- [ ] `MCU_STM32.SchDoc`: select the STM32 pins in CubeMX and wire them to the harness and port net labels; `BAL_EN_N` also needs a pin
-- [ ] Make the sheets more readable: tidy the layout (Connectors around J1 is tight), group each block, add titles
-- [ ] Add notes on the sheets: pin choices on the MCU, TS/LV marking on J2/J3, unused connector pins, why each harness exists
-- [ ] CAN H/L and `ISO_COMH` P/N: differential-pair directives (needs `_P`/`_N` names or the suffix set in Project Options)
-- [ ] CAN TVS (e.g. ESD2CAN24) on `CAN_H`/`CAN_L`, and decide the termination per channel (variant if only one end is terminated)
-- [ ] `Top.SchDoc`: net labels `CAN1_H`, `CAN1_L`, `CAN2_H`, `CAN2_L` on the CAN wires (nets are `CAN_H_CAN1` etc. without them)
-- [ ] Annotate the whole project (CAN parts become `U1_CAN1`, `U1_CAN2`, ...)
 - [ ] Order the J3 RJ12 (CONNFLY DS1133-S60BPX, C77859) online: not available locally
 - [ ] Version 2: second 2-pin daisy-chain connector for COML (ring)
-- [ ] Resolve the notes on `Stack_Interface.SchDoc`: second COM port for v1, 0 Ω resistors, cap packages
-- [ ] Verify CAN, ADC and memory specs in CubeMX/datasheet before ordering
 
 Power, understanding and bench checks:
 

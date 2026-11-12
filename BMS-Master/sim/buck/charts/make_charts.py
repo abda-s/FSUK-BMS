@@ -1,6 +1,6 @@
 """
 LTspice raw-file reader + chart generator for buck_startup.raw
-(TPS62933F buck, 12 V -> 6.5 V, transient startup).
+(TPS62933F buck, 12 V -> 6.94 V, transient startup).
 
 Binary layout of this LTspice "fast access" raw file:
   UTF-16LE text header, "Binary:\n" then, per point, a 48-byte record:
@@ -49,8 +49,8 @@ V = {c: np.ascontiguousarray(u[:, 2 + i]).view("<f4")
      for i, c in enumerate(VAR_NAMES)}
 
 vout, il1, vin, irh = V["V(vout)"], V["I(L1)"], V["V(vin)"], V["I(Rh)"]
-RL = 6.5                             # load resistor, ohm
-VTARGET = 0.8 * (1 + 71.5 / 10)      # feedback divider, 6.52 V
+RL = 6.94                            # load resistor, ohm (1 A at 6.94 V)
+VTARGET = 0.8 * (1 + 76.8 / 10)      # feedback divider, 6.94 V
 V90 = round(0.9 * VTARGET, 2)        # t_90 threshold, same as the .meas
 
 # ------------------------------------------------------------------- derived data
@@ -128,7 +128,7 @@ def x_us(ax):
     ax.xaxis.set_major_formatter(plain_fmt())
 
 # ------------------------------------------------------------- figure management
-SUB = f"TPS62933F buck  |  12 V -> 6.5 V @ 1 A  |  buck_startup.raw  |  {n:,} pts, 0-9 ms, max step 20 ns"
+SUB = f"TPS62933F buck  |  12 V -> 6.94 V @ 1 A  |  buck_startup.raw  |  {n:,} pts, 0-9 ms, max step 20 ns"
 
 def new_fig(nrows, ncols, figsize, title, heights=None):
     """constrained_layout keeps titles/labels/tick text from colliding."""
@@ -291,7 +291,7 @@ fig, axs = new_fig(2, 1, (11.5, 8.0), "Inductor current - start-up inrush and st
                     heights=[1.3, 1])
 plot_env(axs[0], t * 1e3, il1, "I(L1)  inductor current", C["il"])
 axs[0].axhline(1.0, color="#95a5a6", ls=":", lw=1.2)
-axs[0].text(0.15, 1.04, "1 A load (Rload = 6.5 ohm)", fontsize=8.5, color="#7f8c8d")
+axs[0].text(0.15, 1.04, "1 A load (Rload = 6.94 ohm)", fontsize=8.5, color="#7f8c8d")
 axs[0].annotate(f"peak = {stats['il_max']:.3f} A",
                 xy=(t[np.argmax(il1)] * 1e3, stats["il_max"]),
                 xytext=(t[np.argmax(il1)] * 1e3 + 0.8, stats["il_max"] - 0.42),
@@ -333,7 +333,7 @@ finish(fig, "04_switch_node")
 fig, axs = new_fig(2, 1, (11.5, 8.0), "Input / output power and converter efficiency",
                     heights=[1.25, 1])
 plot_env(axs[0], t * 1e3, pin, "P(in)  = V(vin) x I(Rh)", C["pin"])
-plot_env(axs[0], t * 1e3, pout, "P(out)  = V(vout)^2 / 6.5 ohm", C["pout"])
+plot_env(axs[0], t * 1e3, pout, "P(out)  = V(vout)^2 / 6.94 ohm", C["pout"])
 axs[0].set_ylabel("power  [W]")
 axs[0].set_title("Power during start-up", fontsize=10)
 axs[0].set_xlim(0, 9)
@@ -526,7 +526,7 @@ Every chart exists in both **`.png`** (raster preview) and **`.svg`** (vector, r
 selectable text - recommended for reports and printing).
 
 ## Circuit under test
-TPS62933F buck converter, 12 V battery rail -> regulated 6.52 V into a 6.5 ohm load (1 A).
+TPS62933F buck converter, 12 V battery rail -> regulated 6.94 V into a 6.94 ohm load (1 A).
 `.tran 0 9m 0 20n`, Gear integration, {n:,} stored points.
 
 ## Charts

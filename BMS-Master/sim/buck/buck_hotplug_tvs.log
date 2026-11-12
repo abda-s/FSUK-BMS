@@ -1,6 +1,6 @@
 LTspice 26.1.1 for Windows
 Circuit: E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_hotplug_tvs.cir
-Start Time: Fri Oct 23 01:37:58 2026
+Start Time: Wed Nov  4 13:12:09 2026
 Options:reltol=0.005 trtol=7 method=gear
 solver = Normal
 Maximum thread count: 12
@@ -10,13 +10,13 @@ method = Gear
 reltol = 0.005
 trtol = 7
 Direct Newton iteration succeeded in finding operating point.
-Total elapsed time: 596.088 seconds.
-Total iterations: 343888
+Total elapsed time: 40.740 seconds.
+Total iterations: 349203
 
 Files loaded:
 E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_hotplug_tvs.cir
 E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\TPS62933F_LTspice.lib
 
-E:\Documents\Racing\FSUK-BMS\BMS-Master\sim\buck\buck_hotplug_tvs.cir(27): Current not found.
-.meas tran itvs_max MAX -I(Dtvs)
-                         ^^^^^^^
+vin_max: MAX(V(vin))=17.066072464 FROM 0 TO 0.0003
+itvs_max: MAX(-I(Dtvs))=0.00162963639013 FROM 0 TO 0.0003
+ih_max: MAX(I(Rh))=58.7129592896 FROM 0 TO 0.0003

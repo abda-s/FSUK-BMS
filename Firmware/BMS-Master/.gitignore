@@ -1,0 +1,8 @@
+# CubeIDE build output
+Debug/
+Release/
+
+# CubeMX/CubeIDE temp files
+MXTmpFiles/
+*_save
+*.bak

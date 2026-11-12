@@ -39,6 +39,7 @@ FSUK-BMS/
 │   ├── docs/         README images
 │   └── sim/          LTspice simulations
 ├── BMS-Module/       Altium project: module board
+├── Firmware/         STM32CubeIDE projects (BMS-Master: STM32G474)
 ├── Docs/             Git for Altium guide, block diagram
 └── Reference Docs/   Datasheets, app notes, rules (Shared/, Master/, Module/);
                       start with Reference Docs/README.md

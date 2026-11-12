@@ -11,10 +11,10 @@ X1 bst en fb 0 NC_01 ss sw vin TPS62933F_TRANS
 Cboot bst sw 100n
 L1 sw vout 8.2u Rser=83m
 Cout vout 0 26u Rser=3m
-Rfbt vout fb 71.5k
+Rfbt vout fb 76.8k
 Cff vout fb 6.8p
 Rfbb fb 0 10k
-Rload vout 0 6.5
+Rload vout 0 6.94
 Dtvs 0 vin SMBJ16A
 .model SMBJ16A D(Is=1e-12 N=1.2 Rs=0.36 BV=17.8 IBV=1m Cjo=1n)
 .include TPS62933F_LTspice.lib
