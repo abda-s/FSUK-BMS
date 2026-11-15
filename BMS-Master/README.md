@@ -23,6 +23,7 @@ sources. The Altium sheet is in brackets.
 - MCU
   - [MCU selection: STM32G474](#mcu-selection-stm32g474) (`MCU_STM32.SchDoc`)
   - [Balancing switch](#balancing-switch) (`MCU_STM32.SchDoc`)
+  - [Crystal](#crystal) (`MCU_STM32.SchDoc`)
 - Daisy chain to the modules
   - [Isolation transformer](#daisy-chain-isolation-transformer-selection) (`Stack_Interface.SchDoc`)
 - CAN
@@ -38,6 +39,7 @@ sources. The Altium sheet is in brackets.
   - [Buck converter: TPS62933F](#buck-converter-tps62933f)
   - [LDOs (+5V, +3V3)](#ldos-5v-3v3)
 - [Connectors](#connectors) (`Connectors.SchDoc`)
+- [Test points](#test-points)
 - [Progress](#progress): what's done and the to-do list
 
 ## Block diagram
@@ -190,7 +192,7 @@ LQFP64: enough pins for everything above, with spares and the SWD pins.
 
 ### Schematic (`MCU_STM32.SchDoc`)
 
-![MCU_STM32.SchDoc: STM32G474RET6 with decoupling, 20 MHz crystal, NRST and BOOT0, every used pin labelled, balancing switch, inputs on the left and outputs and buses on the right](docs/sch/mcu.png)
+![MCU_STM32.SchDoc: STM32G474RET6 with decoupling, 20 MHz SMD crystal (SX5A20, 12 pF load caps), NRST and BOOT0, every used pin labelled, balancing switch, inputs on the left and outputs and buses on the right](docs/sch/mcu.png)
 
 Sheet size A3. Layout follows signal flow:
 
@@ -208,6 +210,22 @@ Sheet size A3. Layout follows signal flow:
   pushbutton to GND in parallel with the cap (XKB TS-1187A-B-A-B, SMD
   5.1 × 5.1 mm, 160 gf, LCSC C318884). Pins 1–2 and 3–4 are joined inside the
   switch; pin 2 goes to NRST, pin 4 to GND.
+
+### Crystal
+
+**Chosen: SCTF SX5A20.000F2010F30G** (LCSC C5830635), a 5032 (5.0 × 3.2 mm)
+2-pad SMD crystal: 20 MHz, load capacitance CL = 10 pF, ESR ≤ 40 Ω, shunt
+C0 ≤ 5 pF, ±10 ppm @ 25 °C, −40…+85 °C. Load caps are **12 pF C0G**
+(Samsung CL05C120JB5NNNC, LCSC C26406).
+
+- C5830634 (±10 ppm) was the first pick but has no EasyEDA model, so its
+  identical-footprint sibling C5830635 (±20 ppm) is used instead.
+- Gain-margin check (AN2867 Rev 23): `gmcrit = 4·ESR·(2πF)²·(C0 + CL)² ≈
+  0.57 mA/V`, against the STM32G474 HSE limit of 1.5 mA/V (DS12288 Table 41)
+  — a 2.6× margin, passes.
+
+Source: `Reference Docs/Master/Crystal/SCTF SX5A Crystal Datasheet.pdf` (and
+AN2867 Rev 23 for the gmcrit formula, plus DS12288 Table 41 Gm = 1.5 mA/V).
 
 ### Pin configuration
 
@@ -278,6 +296,9 @@ it only isolates TS from TS (one module's voltage, ~67 V).
 
 `Stack_Interface.SchDoc`: the BQ79600-Q1 (top) and the COMH link through the
 transformer to J2 (bottom).
+
+`R29`, the 1 kΩ COML termination, was removed: `COMLP`/`COMLN` are left
+unconnected, matching TI SLUAA16A §1.5 ("leave unconnected if not used").
 
 ### TI's validated list
 
@@ -705,7 +726,7 @@ that board: **12 V = OK, 0 V = open the SDC**.
 
 ![AMS_OK driver schematic (AMS_SDC.SchDoc)](docs/ams-ok/ams-ok-driver.png)
 
-Q1 = AO3400A (level shift), Q2 = AO3401A (12 V high-side switch), 2K2 = output short-circuit limit.
+Q1 = AO3401A (12 V high-side switch), Q2 = AO3400A (level shift), 2K2 = output short-circuit limit.
 
 | Case | Result |
 |---|---|
@@ -719,30 +740,30 @@ Q1 = AO3400A (level shift), Q2 = AO3401A (12 V high-side switch), 2K2 = output s
 - One N-MOSFET on top: its gate would need to be above 12 V + threshold, which needs a charge pump.
 - One N-MOSFET to GND: a short to GND would read as OK, which T 11.9 forbids.
 
-Q1 only level-shifts the drive for Q2. The two 10k split the gate drive to about −6 V, inside the AO3401A's ±12 V limit.
+Q2 only level-shifts the drive for Q1. The two 10k split the gate drive to about −6 V, inside the AO3401A's ±12 V limit.
 
 ### Parts
 
 | | Part | LCSC | Key specs |
 |---|---|---|---|
-| Q1 | AO3400A (N, AOS) | C20917 | V_GS(th) 0.65 / 1.05 / 1.45 V, C_iss 630 pF, C_rss 50 pF, I_GSS ±100 nA, V_GS ±12 V |
-| Q2 | AO3401A (P, AOS) | C15127 (alt. UMW C347476) | V_GS(th) −0.5 to −1.3 V, V_GS ±12 V, V_DS −30 V |
+| Q1 | AO3401A (P, UMW) | C347476 | V_GS(th) −0.5 to −1.3 V, V_GS ±12 V, V_DS −30 V |
+| Q2 | AO3400A (N, UMW) | C347475 | V_GS(th) 0.65 / 1.05 / 1.45 V, C_iss 630 pF, C_rss 50 pF, I_GSS ±100 nA, V_GS ±12 V |
 
-C15127 is marked "not recommended for new designs" on LCSC; the UMW AO3401A is the second source.
+Both are UMW parts; the earlier AOS parts (C15127/C20917) were marked "not recommended for new designs" on LCSC.
 
 The AO3400A replaced the 2N7002: the 2N7002's 2.5 V max threshold left only ~0.37 V of margin at a 3.3 V pin.
 
 ### Resistor values
 
-Inputs: STM32G474 V_OH ≥ V_DD − 0.4 = **2.9 V** up to **8 mA** (DS12288 Table 55), floating pin leakage **±150 nA** (Table 54). Q1 sinks the Q2 divider: 12 V / 20k = **0.6 mA**, so Q1 needs V_G ≥ V_GS(th)max + 0.2 V = **1.65 V**.
+Inputs: STM32G474 V_OH ≥ V_DD − 0.4 = **2.9 V** up to **8 mA** (DS12288 Table 55), floating pin leakage **±150 nA** (Table 54). Q2 sinks the Q1 divider: 12 V / 20k = **0.6 mA**, so Q2 needs V_G ≥ V_GS(th)max + 0.2 V = **1.65 V**.
 
-**Gate resistor R_G (Q1 gate):**
-- Min, protect the pin: the gate looks like a short at each edge (and permanently if Q1 fails gate-source short). R_G ≥ 3.3 V / 8 mA = **412 Ω**.
-- Max, Q1 must still turn on through the R_G / R_PD divider: 2.9 × 100k / (100k + R_G) ≥ 1.65 V → R_G ≤ **75 kΩ**.
+**Gate resistor R_G (Q2 gate):**
+- Min, protect the pin: the gate looks like a short at each edge (and permanently if Q2 fails gate-source short). R_G ≥ 3.3 V / 8 mA = **412 Ω**.
+- Max, Q2 must still turn on through the R_G / R_PD divider: 2.9 × 100k / (100k + R_G) ≥ 1.65 V → R_G ≤ **75 kΩ**.
 - Speed is not a limit: 1k × 630 pF = 0.63 µs against the 500 ms rule.
 - **1k chosen:** peak 2.9 mA (< 8 mA), V_G = 2.9 × 100/101 = **2.87 V**, 1.4 V above the worst-case threshold.
 
-**Pull-down R_PD (Q1 gate to GND)**, holds Q1 off while the pin floats (MCU reset, before init, MCU unpowered):
+**Pull-down R_PD (Q2 gate to GND)**, holds Q2 off while the pin floats (MCU reset, before init, MCU unpowered):
 - Max, leakage must not lift the gate: (150 nA pin + 100 nA gate) × 100k = **25 mV**, far below V_GS(th)min 0.65 V.
 - Min, must not steal the gate drive: R_PD ≥ 1k × 1.65 / (2.9 − 1.65) = **1.3 kΩ**.
 - Power-up glitch through C_rss as the 12 V rail ramps: 100k × 50 pF × 12 V/1 ms = **60 mV**.
@@ -750,7 +771,7 @@ Inputs: STM32G474 V_OH ≥ V_DD − 0.4 = **2.9 V** up to **8 mA** (DS12288 Tabl
 
 **Output resistor 2K2 (0805, UNI-ROYAL 0805W8F2201T5E, LCSC C17520).**
 `AMS_OK` leaves the board on a cable. If that wire touches GND or the chassis,
-nothing else limits the current through Q2. A resistor limits it at once (a
+nothing else limits the current through Q1. A resistor limits it at once (a
 PTC would let amps through until it trips).
 - Max, the SDC input must still see "high": with their worst-case 10k
   pull-down and LV sagging to 11 V, 11 × 10k / (10k + R) ≥ 8 V → R ≤ **3.7k**.
@@ -891,7 +912,7 @@ battery (12 V nominal, up to ~16 V while charging).
 | Load | Sheet | Worst | Typical |
 |---|---|---|---|
 | Buck input: 1.90 W / 12 V (0.89 W typical) | Power | 158 mA | 74 mA |
-| AMS_OK driver: Q2 gate divider 12 V / 20k | AMS_SDC | 0.6 mA | 0.6 mA |
+| AMS_OK driver: Q1 gate divider 12 V / 20k | AMS_SDC | 0.6 mA | 0.6 mA |
 | AMS_OK output into the SDC pull-down (2K2 + 10k worst) | AMS_SDC | 1.0 mA | 0.1 mA |
 | **Total from the LV supply** | | **≈ 160 mA, 1.9 W** | **≈ 75 mA, 0.9 W** |
 
@@ -1145,7 +1166,7 @@ has to stay above that even when every tolerance is at its worst.
   77 % duty (was 72 %). With 98 % maximum duty and the 140 ns minimum
   off-time at 500 kHz it stops regulating at about 7.5 V input, which is a
   flat 12 V battery.
-- The net is still named `+6V5` on `Power.SchDoc`.
+- The net is still named `+6V94` on `Power.SchDoc`.
 
 **UVLO.** The buck only starts once the battery is above 8 V and stops below
 7 V. This stops it running from a flat or sagging LV battery. WEBENCH's
@@ -1702,6 +1723,26 @@ Sources:
 FSUK rules EV 4.3.5 (`Reference Docs/Shared/FSUK Rules/`). Part numbers and stock
 from LCSC, 2026-10-23. Images: LCSC product photos.
 
+## Test points
+
+20 surface-mount test points (Keystone 5015, LCSC C2906768) are placed across
+the board for bring-up and probing. Each is a single-pin SMD loop, tied to its
+net by a net label.
+
+| Sheet | Designators | Nets |
+|---|---|---|
+| Power | TP1–TP5 | `+12V`, `+6V94`, `+5V`, `+3V3`, `GND` |
+| MCU_STM32 | TP6–TP15 | `BQ_SCLK`, `BQ_MOSI`, `BQ_MISO`, `BQ_nCS`, `BQ_NFAULT`, `BQ_SPI_RDY`, `MCU_NRST`, `BAL_EN_N`, `CHG_EN`, `GND` |
+| Current_Sense | TP16, TP17 | `ISENSE_HI`, `ISENSE_LO` |
+| AMS_SDC | TP18 | `AMS_OK` |
+| CAN (→ CAN1, CAN2) | TP19, TP20 | `CAN_P`, `CAN_N` |
+
+Deliberately left without test points: the crystal nets (a probe loads the
+oscillator), the daisy chain / `ISO_COMH` (TS side, reachable at J2), the
+charger Reg Bus (mains potential) and SWD (already on J4). The 5015 footprint
+is a single 3.43 × 1.78 mm SMD pad (`TEST-SMD_L2.7-W1.0` from the EasyEDA
+library).
+
 ## Progress
 
 ### Done
@@ -1749,8 +1790,11 @@ from LCSC, 2026-10-23. Images: LCSC product photos.
 - [x] `Top.SchDoc`: net labels `CAN1_P`, `CAN1_N`, `CAN2_P`, `CAN2_N` on the CAN wires; pairs are now named `CAN1`, `CAN2`, `COMH`, `ISO_COMH`
 - [x] Sheets tidied: boxes, titles and notes on `CAN.SchDoc` (from MCU, transceiver, bus), `Current_Sense.SchDoc` (sensor input, dividers, to MCU, sensor supply) and `Stack_Interface.SchDoc` (BQ79600-Q1 bridge, COMH filter/ESD/isolation); `Charger.SchDoc` and `AMS_SDC.SchDoc` are small and keep their notes without boxes
 - [x] `Top.SchDoc`: "Harnesses" note explaining the rule and each harness (`CAN_MCU`, `BQ97600_SPI`, `ISENSE_ADC`, `SWD`)
-- [x] Project annotated: one sequence per prefix, sheet by sheet (MCU, Power, CAN, Current_Sense, Stack_Interface, Charger, AMS_SDC), top to bottom then left to right; J1–J4 kept. C1–C46, R1–R38, U1–U8, D1–D4, Q1–Q2, SW1–SW2, F1, L1, T1, X1. CAN parts compile as `U5_CAN1`/`U5_CAN2` etc.; 123 physical parts, no duplicates
+- [x] Project annotated: one sequence per prefix, sheet by sheet (MCU, Power, CAN, Current_Sense, Stack_Interface, Charger, AMS_SDC), top to bottom then left to right; J1–J4 kept. C1–C46, R1–R38 (R29 removed), U1–U8, D1–D4, Q1–Q2, SW1–SW2, F1, L1, T1, X1. CAN parts compile as `U5_CAN1`/`U5_CAN2` etc.; 127 physical parts, no duplicates
 - [x] CAN, ADC and memory checked in CubeMX and DS12288: STM32G474RET6 (512 KB flash), FDCAN1 + FDCAN2 at 500 kbit/s, ADC1 slow channels IN6–IN8 with 247.5-cycle sampling, see [`Firmware/README.md`](../Firmware/README.md#settings)
+- [x] 42 Celestial-library passives re-imported as EasyEDA/LCSC parts (LCSC BOM codes on every R and C)
+- [x] `MCU_STM32.SchDoc`: crystal X1 swapped to the 5032 SMD SCTF SX5A20.000F2010F30G (C5830635) with 12 pF C0G load caps C13/C14, see [Crystal](#crystal)
+- [x] Test points added (TP1–TP20, Keystone 5015), see [Test points](#test-points)
 
 ### To do
 
