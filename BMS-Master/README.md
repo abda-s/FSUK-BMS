@@ -38,6 +38,7 @@ sources. The Altium sheet is in brackets.
   - [LV input protection](#lv-input-protection)
   - [Buck converter: TPS62933F](#buck-converter-tps62933f)
   - [LDOs (+5V, +3V3)](#ldos-5v-3v3)
+  - [Power indicator LEDs](#power-indicator-leds)
 - [Connectors](#connectors) (`Connectors.SchDoc`)
 - [Test points](#test-points)
 - [Progress](#progress): what's done and the to-do list
@@ -875,7 +876,8 @@ exact names.
 | CAN TXD/RXD pull-ups, 4× 10k | CAN | 1.3 mA | 0.7 mA | only while the line is low (dominant) |
 | BAL_EN_N pull-up 10k | MCU_STM32 | 0.33 mA | 0 mA | only while the switch is on |
 | NRST pull-up 10k, BOOT0 pull-down 10k | MCU_STM32 | 0.33 mA | 0 mA | NRST only during reset; BOOT0 sits low |
-| **Total** | | **≈ 58 mA** | **≈ 48 mA** | |
+| Power LED LED4 (1.5k from +3V3) | Power | 0.97 mA | 0.97 mA | (3.3 V − 1.85 V) / 1.5k |
+| **Total** | | **≈ 59 mA** | **≈ 49 mA** | |
 
 LDO dissipation: (6.94 − 3.3) V × 58 mA ≈ **0.21 W** (0.23 W with the buck at
 its 7.21 V maximum). Rate it **≥ 150 mA**.
@@ -888,7 +890,8 @@ its 7.21 V maximum). Rate it **≥ 150 mA**.
 | BQ79600 BAT/CVDD/INH | Stack_Interface | 14 mA | 4 mA | 4 mA ACTIVE + 10 mA while transmitting (BQ79600 datasheet) |
 | LEM DHAB S/124 | Current_Sense | 20 mA | 15 mA | DHAB datasheet, both channels |
 | Current-sense dividers (3× 12k + 18k) | Current_Sense | 0.5 mA | 0.4 mA | 5 V / 30k + 2 × 4.75 V / 30k |
-| **Total** | | **≈ 175 mA** | **≈ 61 mA** | |
+| Power LED LED3 (3.3k from +5V) | Power | 0.95 mA | 0.95 mA | (5 V − 1.85 V) / 3.3k |
+| **Total** | | **≈ 176 mA** | **≈ 62 mA** | |
 
 LDO dissipation: (6.94 − 5) V × 175 mA ≈ **0.34 W** (0.39 W with the buck at
 its 7.21 V maximum). Rate it **≥ 300 mA**, with
@@ -900,9 +903,9 @@ there.
 
 | | Worst | Typical |
 |---|---|---|
-| Output current: +5V LDO + +3V3 LDO | 233 mA | 109 mA |
-| Output power: 6.94 V × current | 1.62 W | 0.76 W |
-| Input power at 85 % efficiency | 1.90 W | 0.89 W |
+| Output current: +5V LDO + +3V3 LDO + LED2 (1.1 mA) | 236 mA | 112 mA |
+| Output power: 6.94 V × current | 1.64 W | 0.78 W |
+| Input power at 85 % efficiency | 1.93 W | 0.91 W |
 
 Rate the buck **≥ 0.5 A** output (2× margin), input range covering the LV
 battery (12 V nominal, up to ~16 V while charging).
@@ -911,12 +914,13 @@ battery (12 V nominal, up to ~16 V while charging).
 
 | Load | Sheet | Worst | Typical |
 |---|---|---|---|
-| Buck input: 1.90 W / 12 V (0.89 W typical) | Power | 158 mA | 74 mA |
+| Buck input: 1.93 W / 12 V (0.91 W typical) | Power | 161 mA | 76 mA |
 | AMS_OK driver: Q1 gate divider 12 V / 20k | AMS_SDC | 0.6 mA | 0.6 mA |
 | AMS_OK output into the SDC pull-down (2K2 + 10k worst) | AMS_SDC | 1.0 mA | 0.1 mA |
-| **Total from the LV supply** | | **≈ 160 mA, 1.9 W** | **≈ 75 mA, 0.9 W** |
+| Power LED LED1 (10k from +12V) | Power | 1.0 mA | 1.0 mA |
+| **Total from the LV supply** | | **≈ 164 mA, 2.0 W** | **≈ 78 mA, 0.9 W** |
 
-At 11 V (low LV battery) the worst case rises to ≈ 175 mA.
+At 11 V (low LV battery) the worst case rises to ≈ 178 mA.
 
 **Not on our budget:** the 10k Reg Bus pull-up on `Charger.SchDoc` (0.5 mA)
 is powered by the charger's own `+5V_REGBUS`, not by this board.
@@ -1538,6 +1542,28 @@ Sources: TLV767 datasheet SLVSE84D (PSRR figures). The loop-gain model is
 the standard single-pole simplification, not taken from a specific
 datasheet.
 
+## Power indicator LEDs
+
+Dashed box "Power indicators" on `Power.SchDoc`: one red LED per rail, each
+with a series resistor to GND, set for about 1 mA.
+
+| Rail | Resistor | LED | Current | Resistor part (LCSC) |
+|---|---|---|---|---|
+| +12V | R39 10k | LED1 | ~1.0 mA | FRC0402F1002TS (C2906861) |
+| +6V94 | R40 4.7k | LED2 | ~1.1 mA | 0402WGF4701TCE (C25900) |
+| +5V | R41 3.3k | LED3 | ~0.95 mA | 0402WGF3301TCE (C25890) |
+| +3V3 | R42 1.5k | LED4 | ~0.97 mA | 0402WGF1501TCE (C25867) |
+
+LED1 to LED4: Hubei KENTO KT-0603R, 0603, red 645 nm, LCSC C2286 (JLCPCB
+basic part). Max 25 mA, so 1 mA is well inside the rating.
+
+**Why red:** Vf is about 1.85 V at 1 mA (KT-0603R datasheet, Forward Current
+vs Forward Voltage curve), so it still has headroom on `+3V3`. The 525 nm
+green types have Vf of about 3.1 V, too close to 3.3 V to light reliably.
+
+Current = (V_rail − 1.85 V) / R. The LED loads are included in the
+[Power budget](#power-budget).
+
 ## Connectors
 
 **One main LV connector (J1)** carries everything LV that leaves the board.
@@ -1795,6 +1821,7 @@ library).
 - [x] 42 Celestial-library passives re-imported as EasyEDA/LCSC parts (LCSC BOM codes on every R and C)
 - [x] `MCU_STM32.SchDoc`: crystal X1 swapped to the 5032 SMD SCTF SX5A20.000F2010F30G (C5830635) with 12 pF C0G load caps C13/C14, see [Crystal](#crystal)
 - [x] Test points added (TP1–TP20, Keystone 5015), see [Test points](#test-points)
+- [x] `Power.SchDoc`: power indicator LEDs on +12V, +6V94, +5V, +3V3 (KT-0603R red, ~1 mA each), see [Power indicator LEDs](#power-indicator-leds)
 
 ### To do
 

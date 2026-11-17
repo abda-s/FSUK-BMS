@@ -35,3 +35,7 @@ Desktop.ini
 
 # Raw datasheet downloads before renaming (duplicates of the PDFs in Reference Docs/Master/LDO/)
 Reference Docs/Master/LDO/_raw/
+
+# pdf2md run logs
+tools/pdf2md.log
+tools/pdf2md_run.out

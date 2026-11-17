@@ -1,0 +1,653 @@
+<!-- Converted from RS3215 Datasheet (Runic).pdf with Docling (tools/pdf2md.py). Check key numbers against the PDF. -->
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_001.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_002.png)
+
+## 500mA, Low Quiescent Current, Low-Noise, High PSRR, Low-Dropout Linear Regulator
+
+## 1 FEATURES
+
+-  Input voltage range: 2.7V to 6.5V
+-  Output voltage range:
+- Fixed option: 1.2V to 3.3V
+- Adjustable option: 1.2V to 6V
+-  Up to 500mA load current
+-  Very low dropout: 250mV at 500mA (VOUT=3.3V)
+-  Low IQ: 45μA
+-  High PSRR: 75dB at 100Hz
+-  Excellent Load and Line Transient Response
+-  Stable with a Ceramic, 2.2μF, Low-ESR Output Capacitor
+-  Fast Start-Up Time: 45μs
+-  High Output Accuracy: ±0.75%
+-  Micro SIZE PACKAGES: SOT23-5, DFN2X2-6, DFN3X3-8
+
+## 2 APPLICATIONS
+
+-  Post DC-DC Converter Ripple Filtering
+-  IP Network Cameras
+-  Macro Base Stations
+-  Thermostats
+
+## 3 DESCRIPTIONS
+
+The RS3215 family of low-dropout (LDO), low power linear regulators offers excellent ac performance with very low ground current. High power-supply rejection ratio (PSRR), low noise, fast start-up, and excellent line and load transient responses are provided while consuming a very low 45μA (typical) ground current.
+
+The RS3215 family of devices is stable with ceramic capacitors and uses an advanced BiCMOS fabrication process to yield a typical dropout voltage of 250 mV at 500mA output. The RS3215 family of devices uses a precision voltage reference and feedback loop to achieve high accuracy of ±0.75%.
+
+The RS3215 series is available in Green SOT23-5, DFN2X2-6 and DFN3X3-8 packages. It operates over an ambient temperature range of -40°C to 125°C.
+
+## Device Information (1)
+
+| PART NUMBER | PACKAGE | BODY SIZE (NOM) |
+| - | - | - |
+| RS3215 | SOT23-5 | 1.60mm×2.92mm |
+| RS3215 | DFN2X2-6 | 2.00mm×2.00mm |
+| RS3215 | DFN3X3-8 | 3.00mm×3.00mm |
+
+(1) For all available packages, see the orderable addendum at the end of the data sheet.
+
+## Typical Application
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_003.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_004.png)
+
+GRUNIC
+
+## 4 FUNCTIONAL BLOCK DIAGRAM
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_005.png)
+
+- (1) The 1.2V fixed voltage version has a 1V bandgap instead of a 1.2V circuit. BG Output Voltage =1.2V &amp; 1V
+
+Figure 1. Fixed Voltage Versions
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_006.png)
+
+Figure 2. Adjustable Voltage Versions
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_007.png)
+
+## Table of Contents
+
+| 1 FEATURES ............................................................................................................................................................................... 1 |
+| - |
+| 2 APPLICATIONS ...................................................................................................................................................................... 1 |
+| 3 DESCRIPTIONS ...................................................................................................................................................................... 1 |
+| 4 FUNCTIONAL BLOCK DIAGRAM ..................................................................................................................................... 2 |
+| 5 REVISION HISTORY ............................................................................................................................................................. 4 |
+| 6 PACKAGE/ORDERING INFORMATION (1) ..................................................................................................................... 5 |
+| 7 PIN CONFIGURATION AND FUNCTIONS ..................................................................................................................... 6 |
+| 8 SPECIFICATIONS ................................................................................................................................................................... 7 |
+| 8.1 Absolute Maximum Ratings .......................................................................................................................................... 7 |
+| 8.2 ESD Ratings ...................................................................................................................................................................... 7 |
+| 8.3 Recommended Operating Conditions ......................................................................................................................... 7 |
+| 8.4 ELECTRICAL CHARACTERISTICS ............................................................................................................................... 8 |
+| 8.5 TYPICAL PERFORMANCE CHARACTERISTICS ....................................................................................................10 |
+| 9 FEATURE DESCRIPTION ...................................................................................................................................................15 |
+| 9.1 Internal Current-Limit ...................................................................................................................................................15 |
+| 9.2 Shutdown ........................................................................................................................................................................15 |
+| 9.3 Startup and Noise Reduction Capacitor ...................................................................................................................15 |
+| 9.4 Transient Response .......................................................................................................................................................15 |
+| 9.5 Undervoltage Lockout (UVLO) ...................................................................................................................................15 |
+| 9.6 Disabled ...........................................................................................................................................................................15 |
+| TYPICAL APPLICATION ..................................................................................................................................................16 |
+| 10 |
+| 10.1 Input and Output Capacitor Requirements ...........................................................................................................16 |
+| 10.2 Adjustable Device Feedback Resistors ...................................................................................................................16 |
+| 10.3 Feed-Forward Capacitor(*Optional) .......................................................................................................................16 |
+| 11 POWER SUPPLY RECOMMENDATIONS ...................................................................................................................16 |
+| 12 LAYOUT ...............................................................................................................................................................................17 |
+| 13 PACKAGE OUTLINE DIMENSIONS .............................................................................................................................18 |
+| 14 TAPE AND REEL INFORMATION .................................................................................................................................21 |
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## 5 REVISION HISTORY
+
+Note: Page numbers for previous revisions may different from page numbers in the current version.
+
+| VERSION | Change Date | Change Item |
+| - | - | - |
+| A.0 | 2023/10/25 | Preliminary version completed |
+| A.0.1 | 2024/01/05 | 1.Added Adjustable Voltage Versions 2.Update PACKAGE/ORDERING INFORMATION |
+| A.0.2 | 2024/03/07 | Modify packaging naming |
+| A.0.3 | 2024/06/26 | Added 10.3 Feed-Forward Capacitor (CFB) |
+| A.1 | 2025/01/20 | Update ELECTRICAL CHARACTERISTICS |
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_007.png)
+
+## 6 PACKAGE/ORDERING INFORMATION (1)
+
+| Orderable Device | VOUT(V) | Package Type | Op Temp(°C) | Device Marking (2) | MSL (3) | Package Qty |
+| - | - | - | - | - | - | - |
+| RS3215-1.2XF5-G | 1.2 | SOT23-5 | -40°C ~+125°C | LF12 | MSL1 | Tape and Reel,3000 |
+| RS3215-1.5XF5-G | 1.5 | SOT23-5 | -40°C ~+125°C | LF15 | MSL1 | Tape and Reel,3000 |
+| RS3215-1.8XF5-G | 1.8 | SOT23-5 | -40°C ~+125°C | LF18 | MSL1 | Tape and Reel,3000 |
+| RS3215-2.5XF5-G | 2.5 | SOT23-5 | -40°C ~+125°C | LF25 | MSL1 | Tape and Reel,3000 |
+| RS3215-2.7XF5-G | 2.7 | SOT23-5 | -40°C ~+125°C | LF27 | MSL1 | Tape and Reel,3000 |
+| RS3215-2.8XF5-G | 2.8 | SOT23-5 | -40°C ~+125°C | LF28 | MSL1 | Tape and Reel,3000 |
+| RS3215-3.0XF5-G | 3.0 | SOT23-5 | -40°C ~+125°C | LF30 | MSL1 | Tape and Reel,3000 |
+| RS3215-3.3XF5-G | 3.3 | SOT23-5 | -40°C ~+125°C | LF33 | MSL1 | Tape and Reel,3000 |
+| RS3215-ADJ8XF5-G | ADJ | SOT23-5 | -40°C ~+125°C | LFAD8 | MSL1 | Tape and Reel,3000 |
+| RS3215-1.2XTDC8-G | 1.2 | DFN3X3-8 | -40°C ~+125°C | RS3215A | MSL1 | Tape and Reel,5000 |
+| RS3215-1.5XTDC8-G | 1.5 | DFN3X3-8 | -40°C ~+125°C | RS3215B | MSL1 | Tape and Reel,5000 |
+| RS3215-1.8XTDC8-G | 1.8 | DFN3X3-8 | -40°C ~+125°C | RS3215C | MSL1 | Tape and Reel,5000 |
+| RS3215-2.5XTDC8-G | 2.5 | DFN3X3-8 | -40°C ~+125°C | RS3215D | MSL1 | Tape and Reel,5000 |
+| RS3215-2.7XTDC8-G | 2.7 | DFN3X3-8 | -40°C ~+125°C | RS3215E | MSL1 | Tape and Reel,5000 |
+| RS3215-2.8XTDC8-G | 2.8 | DFN3X3-8 | -40°C ~+125°C | RS3215F | MSL1 | Tape and Reel,5000 |
+| RS3215-3.0XTDC8-G | 3.0 | DFN3X3-8 | -40°C ~+125°C | RS3215G | MSL1 | Tape and Reel,5000 |
+| RS3215-3.3XTDC8-G | 3.3 | DFN3X3-8 | -40°C ~+125°C | RS3215H | MSL1 | Tape and Reel,5000 |
+| RS3215- ADJ8XTDC8-G | ADJ | DFN3X3-8 | -40°C ~+125°C | RS3215K | MSL1 | Tape and Reel,5000 |
+| RS3215-1.2XTDE6-G | 1.2 | DFN2X2-6 | -40°C ~+125°C | LF12 | MSL1 | Tape and Reel,3000 |
+| RS3215-1.5XTDE6-G | 1.5 | DFN2X2-6 | -40°C ~+125°C | LF15 | MSL1 | Tape and Reel,3000 |
+| RS3215-1.8XTDE6-G | 1.8 | DFN2X2-6 | -40°C ~+125°C | LF18 | MSL1 | Tape and Reel,3000 |
+| RS3215-2.5XTDE6-G | 2.5 | DFN2X2-6 | -40°C ~+125°C | LF25 | MSL1 | Tape and Reel,3000 |
+| RS3215-2.7XTDE6-G | 2.7 | DFN2X2-6 | -40°C ~+125°C | LF27 | MSL1 | Tape and Reel,3000 |
+| RS3215-2.8XTDE6-G | 2.8 | DFN2X2-6 | -40°C ~+125°C | LF28 | MSL1 | Tape and Reel,3000 |
+| RS3215-3.0XTDE6-G | 3.0 | DFN2X2-6 | -40°C ~+125°C | LF30 | MSL1 | Tape and Reel,3000 |
+| RS3215-3.3XTDE6-G | 3.3 | DFN2X2-6 | -40°C ~+125°C | LF33 | MSL1 | Tape and Reel,3000 |
+| RS3215- ADJ8XTDE6-G | ADJ | DFN2X2-6 | -40°C ~+125°C | LFAD8 | MSL1 | Tape and Reel,3000 |
+
+NOTE:
+
+(1) This information is the most current data available for the designated devices. This data is subject to change without notice and revision of this document. For browser-based versions of this data sheet, refer to the right-hand navigation.
+
+(2) There may be additional marking, which relates to the lot trace code information (data code and vendor code), the logo or the environmental category on the device.
+
+(3) RUNIC classify the MSL level with using the common preconditioning setting in our assembly factory conforming to the JEDEC industrial standard J-STD-20F, Please align with RUNIC if your end application is quite critical to the preconditioning setting or if you have special requirement.
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_009.png)
+
+## 7 PIN CONFIGURATION AND FUNCTIONS
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_010.png)
+
+## Pin Description
+
+(1) I=input, O=output, G= Ground.
+
+| NAME | PIN - SOT23-5 | PIN - DFN2X2-6 | PIN - DFN3X3-8 | I/O (1) | DESCRIPTION |
+| - | - | - | - | - | - |
+| IN | 1 | 6 | 8 | I | Input supply. |
+| GND | 2 | 3 | 4 | G | Ground. |
+| EN | 3 | 4 | 5 | I | Driving the enable pin (EN) high turns on the regulator. Driving this pin low puts the regulator into shutdown mode. The EN pin can be connected to the IN pin if not used. |
+| NR/FB | 4 | 2 | 3 | - | The NR pin is only available for the fixed voltage versions. Connecting an external capacitor to this pin bypasses noise generated by the internal band gap and allows the output noise to be reduced to very low levels. The FB pin is only available for the adjustable voltage versions. This pin is the input to the control-loop error amplifier, and is used to set the output voltage of the device. |
+| OUT | 5 | 1 | 1 | O | This pin is the output of the regulator. A small 2.2µF ceramic capacitor is required from this pin to ground to assure stability. |
+| NC | - | 5 | 2,6,7 | - | Not internally connected. |
+| - | - | Thermal Pad | Thermal Pad | - | The pad must be tied to the GND pin. |
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## 8 SPECIFICATIONS
+
+## 8.1 Absolute Maximum Ratings
+
+over operating free-air temperature range (unless otherwise noted) (1) (2)
+
+|  |  |  | MIN | MAX | UNIT |
+| - | - | - | - | - | - |
+| VIN | Input voltage | Input voltage | -0.3 | 7 | V |
+| VEN | Enable input voltage | Enable input voltage | -0.3 | VIN + 0.3 | V |
+| VFB | input voltage | input voltage | -0.3 | 1.6 | V |
+| VOUT | Output voltage | Output voltage | -0.3 | VIN + 0.3 | V |
+| IOUT | Current | Current | Internally limited | Internally limited | A |
+| θJA |  | SOT23-5 |  | 200 | °C/W |
+|  | Package thermal impedance (3) | DFN3X3-8 |  | 60 | °C/W |
+|  | Package thermal impedance (3) | DFN2X2-6 |  | 82 | °C/W |
+| TJ | Junction temperature (4) | Junction temperature (4) | -40 | 150 | °C |
+| Tstg | Storage temperature | Storage temperature | -55 | 150 | °C |
+
+(1) Stresses beyond those listed under Absolute Maximum Ratings may cause permanent damage to the device. These are stress ratings only, and functional operation of the device at these or any other conditions beyond those indicated under Recommended Operating Conditions is not implied. Exposure to absolute-maximum-rated conditions for extended periods may affect device reliability.
+
+- (2) All voltages are with respect to the GND pin.
+- (3) The package thermal impedance is calculated in accordance with JESD-51.
+- (4) The maximum power dissipation is a function of TJ(MAX), RθJA, and TA. The maximum allowable power dissipation at any ambient temperature is PD = (T J(MAX) - TA) / RθJA. All numbers apply for packages soldered directly onto a PCB.
+
+## 8.2 ESD Ratings
+
+The following ESD information is provided for handling of ESD-sensitive devices in an ESD protected area only.
+
+|  |  | VALUE | UNIT |
+| - | - | - | - |
+| V(ESD) | Electrostatic discharge Human-Body Model (HBM) | ±4000 | V |
+| V(ESD) | Charged-Device Model (CDM) | ±1000 | V |
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_011.png)
+
+## ESD SENSITIVITY CAUTION
+
+ESD damage can range from subtle performance degradation to complete device failure. Precision integrated circuits may be more susceptible to damage because very small parametric changes could cause the device not to meet its published specifications.
+
+## 8.3 Recommended Operating Conditions
+
+over operating free-air temperature range (unless otherwise noted) (1)
+
+|  |  | MIN | MAX | UNIT |
+| - | - | - | - | - |
+| VIN | Input supply voltage | 2.7 | 6.5 | V |
+| VOUT | Output voltage | VFB | 6 | V |
+| IOUT | Output current | 0 | 500 | mA |
+| TA | Operating free-air temperature | -40 | 125 | °C |
+
+(1) When operating at TJ near 125°C, IOUT(min) is 500μA.
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## 8.4 ELECTRICAL CHARACTERISTICS
+
+Over operating temperature range (-40°C ≤ TJ ≤ 125°C), VIN = VOUTnom + 0.5 V or 2.7 V (whichever is greater), IOUT=1mA, VEN = VIN, COUT = 2.2μF, and CNR = 0.01μF, unless otherwise noted. For the adjustable version, VOUT = 3.3V. Typical values are at TA = 25°C.
+
+| PARAMETER | SYMBOL | CONDITIONS |  | MIN | TYP | MAX | UNIT |
+| - | - | - | - | - | - | - | - |
+| POWER SUPPLY AND CURRENTS | POWER SUPPLY AND CURRENTS | POWER SUPPLY AND CURRENTS | POWER SUPPLY AND CURRENTS | POWER SUPPLY AND CURRENTS | POWER SUPPLY AND CURRENTS | POWER SUPPLY AND CURRENTS | POWER SUPPLY AND CURRENTS |
+| Input Voltage (1) | VIN |  |  | 2.7 |  | 6.5 | V |
+| Under Voltage Lockout | UVLO | VIN rising |  | 2.25 | 2.45 | 2.65 | V |
+| Hysteresis | VHYS | VIN falling |  |  | 60 |  | mV |
+| Quiescent Current | IQ | IOUT = 0mA |  |  | 45 | 70 | μA |
+| Ground Pin Current | IGND | 10mA ≤ IOUT ≤ 500mA |  |  | 70 | 120 | μA |
+| Shutdown Current | ISD | VEN = 0V |  |  | 0.1 | 1.5 | μA |
+| OUTPUT VOLTAGE | OUTPUT VOLTAGE | OUTPUT VOLTAGE | OUTPUT VOLTAGE | OUTPUT VOLTAGE | OUTPUT VOLTAGE | OUTPUT VOLTAGE | OUTPUT VOLTAGE |
+| Output Voltage Range | VOUT | Adjustable Only |  | VFB |  | 6 | V |
+| Feedback Voltage | VFB | Adjustable Only |  | 1.191 | 1.200 | 1.209 | V |
+| Feedback Pin Current | IFB | Adjustable Only |  |  | 0.01 | 0.1 | uA |
+| DC Output Accuracy (1) | ΔVOUT | TJ = 25°C |  | -0.75 |  | 0.75 | % |
+|  |  | TJ = -40°C ~+125°C |  | -1.5 |  | 1.5 | % |
+| Line Regulation (1) | ΔVOUT(ΔVIN) | VOUTnom + 0.5V ≤ VIN ≤ 6.5V |  |  | 0.02 | 0.06 | %/V |
+| Load Regulation | ΔVOUT(ΔIOUT) | 500µA ≤ IOUT ≤ 500mA |  |  | 0.002 | 0.006 | %/mA |
+| DROPOUT VOLTAGE | DROPOUT VOLTAGE | DROPOUT VOLTAGE | DROPOUT VOLTAGE | DROPOUT VOLTAGE | DROPOUT VOLTAGE | DROPOUT VOLTAGE | DROPOUT VOLTAGE |
+| Dropout Voltage (2) (VIN = VOUTnom - 0.1V) | VDO | IOUT = 500mA | VOUT=2.8V |  | 295 | 300 | mV |
+| Dropout Voltage (2) (VIN = VOUTnom - 0.1V) | VDO | IOUT = 500mA | VOUT=3.3V |  | 250 | 300 | mV |
+| Dropout Voltage (2) (VIN = VOUTnom - 0.1V) | VDO | IOUT = 500mA | VOUT=5.0V (Adjustable only) |  | 195 | 300 | mV |
+| Dropout Voltage (2) (VIN = VOUTnom - 0.1V) | VDO | IOUT = 500mA | VOUT=6.0V (Adjustable only) |  | 180 | 300 | mV |
+| POWER SUPPLY REJECTION RATIO AND NOISE | POWER SUPPLY REJECTION RATIO AND NOISE | POWER SUPPLY REJECTION RATIO AND NOISE | POWER SUPPLY REJECTION RATIO AND NOISE | POWER SUPPLY REJECTION RATIO AND NOISE | POWER SUPPLY REJECTION RATIO AND NOISE | POWER SUPPLY REJECTION RATIO AND NOISE | POWER SUPPLY REJECTION RATIO AND NOISE |
+| Power Supply Rejection Ratio | PSRR | f = 100Hz | f = 100Hz |  | 75 |  | dB |
+| Power Supply Rejection Ratio | PSRR | VIN = 3.8V, VOUT = 3.3V, f = 1kHz | VIN = 3.8V, VOUT = 3.3V, f = 1kHz |  | 64 |  | dB |
+| Power Supply Rejection Ratio | PSRR | CNR = 0.01µF, f = 10kHz | CNR = 0.01µF, f = 10kHz |  | 43 |  | dB |
+| Power Supply Rejection Ratio | PSRR | IOUT = 100mA f = 100kHz | IOUT = 100mA f = 100kHz |  | 23 |  | dB |
+| Output Noise Voltage | VN | BW = 10 Hz to 100 kHz, CNR=0.047μF | BW = 10 Hz to 100 kHz, CNR=0.047μF |  | 11×VOUT |  | μVRMS |
+| Output Noise Voltage | VN | VOUT = 3.3 V CNR=none | VOUT = 3.3 V CNR=none |  | 45×VOUT |  | μVRMS |
+| ENABLE AND STARTUP TIME | ENABLE AND STARTUP TIME | ENABLE AND STARTUP TIME | ENABLE AND STARTUP TIME | ENABLE AND STARTUP TIME | ENABLE AND STARTUP TIME | ENABLE AND STARTUP TIME | ENABLE AND STARTUP TIME |
+| Enable High(enabled) | VIH | EN rising |  | 1.2 |  |  | V |
+| Enable Low(shutdown) | VIL | EN falling |  |  |  | 0.4 | V |
+| Enable Pin Current, Enabled | IEN | VEN = VIN = 6.5V |  |  | 0.1 | 1.5 | μA |
+|  |  | CNR = none |  |  | 45 |  | μs |
+| (3) |  | CNR = 0.001μF |  |  | 45 |  | μs |
+| Startup Time | tSTR | CNR = 0.01μF |  |  | 50 |  | μs |
+|  |  | CNR = 0.047μF |  |  | 50 |  | μs |
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+| PROTECTIONS |  |  |  |  |  |  |
+| - | - | - | - | - | - | - |
+| Output Current Limit | ILIM | VOUT = 0.9 × VOUTnom, VIN = VOUTnom + 0.5V, VIN ≥ 2.7V | 500 | 1150 | 1600 | mA |
+| Thermal Shutdown Temperature | TSD | Shutdown, temperature increasing |  | 150 |  | °C |
+|  | TSD | Reset, temperature decreasing |  | 135 |  | °C |
+
+## NOTES:
+
+1. Minimum VIN = VOUT + VDO or 2.7V, whichever is greater.
+
+2. VDO is not measured for this family of devices with VOUTnom &lt; 2.8V because the minimum VIN = 2.7V.
+
+3. Guaranteed by design and characterization, not a FT item.
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## 8.5 TYPICAL PERFORMANCE CHARACTERISTICS
+
+NOTE: The graphs and tables provided following this note are a statistical summary based on a limited number of samples and are provided for informational purposes only.
+
+Over operating temperature range (-40°C ≤ TJ ≤ 125°C), VIN = VOUTnom + 0.5V or 2.7V (whichever is greater), IOUT = 1mA, VEN = VIN, COUT = 2.2μF, and CNR = 0.01μF, unless otherwise noted.
+
+Figure 3. Quiescent Current vs Input Voltage
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_012.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_013.png)
+
+Figure 5. Ground Pin Current vs Output Current
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_014.png)
+
+Figure 4. Quiescent Current vs Temperature
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_015.png)
+
+Figure 7. Shutdown Current vs Temperature
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_016.png)
+
+Figure 6. Supply Current vs Input Voltage
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_017.png)
+
+Figure 8. Load Regulation
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## TYPICAL PERFORMANCE CHARACTERISTICS
+
+NOTE: The graphs and tables provided following this note are a statistical summary based on a limited number of samples and are provided for informational purposes only.
+
+Over operating temperature range (-40°C ≤ TJ ≤ 125°C), VIN = VOUTnom + 0.5V or 2.7V (whichever is greater), IOUT = 1mA, VEN = VIN, COUT = 2.2μF, and CNR = 0.01μF, unless otherwise noted.
+
+Figure 9. Line Regulation
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_018.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_019.png)
+
+Figure 11. Output Voltage vs Junction Temperature
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_020.png)
+
+Figure 10. Line Regulation
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_021.png)
+
+Figure 13. Feedback Pin Current vs Junction Temperature
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_022.png)
+
+Figure 12. Feedback Voltage vs Junction Temperature
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_023.png)
+
+Figure 14. UVLO vs Junction Temperature
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## TYPICAL PERFORMANCE CHARACTERISTICS
+
+NOTE: The graphs and tables provided following this note are a statistical summary based on a limited number of samples and are provided for informational purposes only.
+
+Over operating temperature range (-40°C ≤ TJ ≤ 125°C), VIN = VOUTnom + 0.5V or 2.7V (whichever is greater), IOUT = 1mA, VEN = VIN, COUT = 2.2μF, and CNR = 0.01μF, unless otherwise noted.
+
+Figure 15. Enable Threshold vs Input Voltage
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_024.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_025.png)
+
+Figure 16. Enable Threshold vs Junction Temperature
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_026.png)
+
+Figure 17. Dropout Voltage vs Output Current
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_027.png)
+
+Figure 19. Power Supply Rejection Ratio vs Frequency
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_028.png)
+
+Figure 18. Dropout Voltage vs Output Current
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_029.png)
+
+Figure 20. RMS Noise vs CNR
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## TYPICAL PERFORMANCE CHARACTERISTICS
+
+NOTE: The graphs and tables provided following this note are a statistical summary based on a limited number of samples and are provided for informational purposes only.
+
+Over operating temperature range (-40°C ≤ TJ ≤ 125°C), VIN = VOUTnom + 0.5V or 2.7V (whichever is greater), IOUT = 1mA, VEN = VIN, COUT = 2.2μF, and CNR = 0.01μF, unless otherwise noted.
+
+Figure 21. Output Current Limit vs Temperature
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_030.png)
+
+Figure 23. Load Transient Response
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_031.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_032.png)
+
+Figure 22. Line Transient Response
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_033.png)
+
+Figure 24. Load Transient Response
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_034.png)
+
+Figure 25. Power On
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_035.png)
+
+Figure 26. Power Off
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## TYPICAL PERFORMANCE CHARACTERISTICS
+
+NOTE: The graphs and tables provided following this note are a statistical summary based on a limited number of samples and are provided for informational purposes only.
+
+Over operating temperature range (-40°C ≤ TJ ≤ 125°C), VIN = VOUTnom + 0.5V or 2.7V (whichever is greater), IOUT = 1mA, VEN = VIN, COUT = 2.2μF, and CNR = 0.01μF, unless otherwise noted.
+
+Figure 27. Turn-On Response Using EN
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_036.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_037.png)
+
+Figure 29. Turn-Off Response Using EN
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_038.png)
+
+Figure 28. Turn-On Response Using EN
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_039.png)
+
+Figure 30. Turn-Off Response Using EN
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## 9 FEATURE DESCRIPTION
+
+## 9.1 Internal Current-Limit
+
+The RS3215 internal current-limit helps protect the regulator during fault conditions. During current-limit, the output sources a fixed amount of current that is largely independent of the output voltage. For reliable operation, do not operate the device in current-limit for extended periods of time.
+
+The RS3215 family of devices has a built-in body diode that conducts current when the voltage at the OUT pin exceeds the voltage at the IN pin. This current is not limited, so if extended reverse voltage operation is anticipated, external limiting can be appropriate.
+
+## 9.2 Shutdown
+
+The enable pin (EN) is active high and is compatible with standard and low-voltage TTL-CMOS levels. When shutdown capability is not required, the EN pin can be connected to the IN pin.
+
+## 9.3 Startup and Noise Reduction Capacitor
+
+Fixed voltage versions of the RS3215 family of devices use a quick-start circuit to fast-charge the noise reduction capacitor, CNR, if present. This architecture allows the combination of very-low output noise and fast startup times. The NR pin is high impedance so a low-leakage CNR capacitor must be used. Most ceramic capacitors are appropriate in this configuration. A high-quality, C0G-type (NP0) dielectric ceramic capacitor is recommended for CNR when used in environments where abrupt changes in temperature can occur.
+
+## 9.4 Transient Response
+
+As with any regulator, increasing the size of the output capacitor reduces overshoot and undershoot magnitude but increases the transient response duration. In the adjustable version, adding CFB between the OUT and FB pins improves stability and transient response performance. The transient response of the RS3215 family of devices is enhanced by an active pulldown that engages when the output overshoots by approximately 4.5% or more when the device is enabled. When enabled, the pull-down device behaves like a 350Ω resistor to ground.
+
+## 9.5 Undervoltage Lockout (UVLO)
+
+The RS3215 family of devices uses an undervoltage lockout circuit to keep the output shut off until the internal circuitry is operating properly.
+
+## 9.6 Disabled
+
+The device is disabled under the following conditions:
+
+- The input voltage is less than the UVLO threshold minus VHYS, or has not yet exceeded the UVLO threshold.
+- The enable voltage is less than the enable falling threshold voltage or has not yet exceeded the enable rising threshold. When disenabled, the pull-down device behaves like a 350Ω resistor to ground.
+- The device junction temperature is greater than the thermal shutdown temperature.
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## 10 TYPICAL APPLICATION
+
+## 10.1 Input and Output Capacitor Requirements
+
+Although an input capacitor is not required for stability, connecting a 0.1μF to 1μF low-equivalent series resistance (ESR) capacitor across the input supply near the regulator is good analog design practice. This capacitor counteracts reactive input sources and improves transient response and ripple rejection. A higher value capacitor can be necessary if large, fast, rise-time load transients are anticipated or if the device is located several inches from the power source. If source impedance is not sufficiently low, a 0.1μF input capacitor can be necessary to ensure stability.
+
+The RS3215 family of devices is designed to be stable with standard ceramic output capacitors of values 2.2μF or larger. X5R- and X7R-type capacitors are best because they have minimal variation in value and ESR over temperature.
+
+## 10.2 Adjustable Device Feedback Resistors
+
+The adjustable-version device requires external feedback divider resistors to set the output voltage. VOUT is set using the feedback divider resistors, R1 and R2, according to the following equation:
+
+<!-- formula-not-decoded -->
+
+To ignore the FB pin current error term in the VOUT equation, set the feedback divider current to 100x the FB pin current listed in the Electrical Characteristics table. This setting provides the maximum feedback divider series resistance, as shown in the following equation:
+
+<!-- formula-not-decoded -->
+
+## 10.3 Feed-Forward Capacitor(*Optional)
+
+For the adjustable-voltage version device, a feed-forward capacitor (CFB) can be connected from the OUT pin to the FB pin. CFB improves transient, noise, and PSRR performance, but is not required for regulator stability. Recommended CFB values are listed in the table1.
+
+Table1
+
+| VOUT (V) | COUT (μF) | R2 (kΩ) | CFB (pF) |
+| - | - | - | - |
+| 1.8 | 2.2 or 4.7 or 10 or 22 | 220 | 22 |
+| 1.8 | 2.2 or 4.7 or 10 or 22 | 100 | 47 |
+| 1.8 | 2.2 or 4.7 or 10 or 22 | 47 | 100 |
+| 3.3 | 2.2 or 4.7 or 10 or 22 | 220 | 22 |
+| 3.3 | 2.2 or 4.7 or 10 or 22 | 100 | 47 |
+| 3.3 | 2.2 or 4.7 or 10 or 22 | 47 | 100 |
+| 5.0 | 2.2 or 4.7 or 10 or 22 | 220 | 22 |
+| 5.0 | 2.2 or 4.7 or 10 or 22 | 100 | 47 |
+| 5.0 | 2.2 or 4.7 or 10 or 22 | 47 | 100 |
+
+## 11 POWER SUPPLY RECOMMENDATIONS
+
+The device is designed to operate from an input voltage supply range between 2.7V and 6.5V. The input voltage range must provide adequate headroom in order for the device to have a regulated output. This input supply must be well regulated. If the input supply is noisy, additional input capacitors with low ESR can help improve output noise.
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_040.png)
+
+## 12 LAYOUT
+
+For best overall performance, place all circuit components on the same side of the circuit board and as near as practical to the respective LDO pin connections. Place ground return connections to the input and output capacitor, and to the LDO ground pin as close to each other as possible, connected by a wide, component-side, copper surface. The use of vias and long traces to create LDO component connections is strongly discouraged and negatively affects system performance. This grounding and layout scheme minimizes inductive parasitics, and thereby reduces load-current transients, minimizes noise, and increases circuit stability. A ground reference plane is also recommended and is either embedded in the printed circuit board (PCB) itself or located on the bottom side of the PCB opposite the components. This reference plane serves to assure accuracy of the output voltage, shields the LDO from noise, and behaves similar to a thermal plane to spread (or sink) heat from the LDO device when connected to the exposed thermal pad. In most applications, this ground plane is necessary to meet thermal requirements.
+
+To improve ac performance (such as PSRR, output noise, and transient response), designing the board with separate ground planes for VIN and VOUT is recommended, with each ground plane connected only at the GND pin of the device. In addition, the ground connection for the bypass capacitor must connect directly to the GND pin of the device.
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## 13 PACKAGE OUTLINE DIMENSIONS
+
+## SOT23-5 (3)
+
+RECOMMENDED LAND PATTERN (Unit: mm)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_041.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_042.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_043.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_044.png)
+
+| Symbol | Dimensions In Millimeters - Min | Dimensions In Millimeters - Max | Dimensions In Inches - Min | Dimensions In Inches - Max |
+| - | - | - | - | - |
+| A (1) | 1.050 | 1.250 | 0.041 | 0.049 |
+| A1 | 0.000 | 0.100 | 0.000 | 0.004 |
+| A2 | 1.050 | 1.150 | 0.041 | 0.045 |
+| b | 0.300 | 0.500 | 0.012 | 0.020 |
+| c | 0.100 | 0.200 | 0.004 | 0.008 |
+| D (1) | 2.820 | 3.020 | 0.111 | 0.119 |
+| E (1) | 1.500 | 1.700 | 0.059 | 0.067 |
+| E1 | 2.650 | 2.950 | 0.104 | 0.116 |
+| e | 0.950(BSC) (2) | 0.950(BSC) (2) | 0.037(BSC) (2) | 0.037(BSC) (2) |
+| e1 | 1.800 | 2.000 | 0.071 | 0.079 |
+| L | 0.300 | 0.600 | 0.012 | 0.024 |
+| θ | 0° | 8° | 0° | 8° |
+
+1. Plastic or metal protrusions of 0.15mm maximum per side are not included.
+2. BSC (Basic Spacing between Centers), "Basic" spacing is nominal.
+3. This drawing is subject to change without notice.
+
+## NOTE:
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_045.png)
+
+## DFN2X2-6 (2)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_046.png)
+
+| Symbol | Dimensions In Millimeters - Min | Dimensions In Millimeters - Max | Dimensions In Inches - Min | Dimensions In Inches - Max |
+| - | - | - | - | - |
+| A (1) | 0.700 | 0.800 | 0.028 | 0.031 |
+| A1 | 0.000 | 0.050 | 0.000 | 0.002 |
+| A2 | 0.203(TYP) | 0.203(TYP) | 0.008(TYP) | 0.008(TYP) |
+| b | 0.250 | 0.350 | 0.010 | 0.012 |
+| D (1) | 1.900 | 2.100 | 0.075 | 0.083 |
+| E (1) | 1.900 | 2.100 | 0.075 | 0.083 |
+| e | 0.650(TYP) | 0.650(TYP) | 0.026(TYP) | 0.026(TYP) |
+| L | 0.250 | 0.400 | 0.010 | 0.018 |
+
+1. Plastic or metal protrusions of 0.075mm maximum per side are not included.
+2. This drawing is subject to change without notice.
+
+## NOTE:
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_008.png)
+
+## DFN3X3-8 (3)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_047.png)
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_048.png)
+
+e
+
+| Symbol | Dimensions In Millimeters - Min | Dimensions In Millimeters - Max | Dimensions In Inches - Min | Dimensions In Inches - Max |
+| - | - | - | - | - |
+| A (1) | 0.700 | 0.800 | 0.028 | 0.031 |
+| A1 | 0.000 | 0.050 | 0.000 | 0.002 |
+| A2 | 0.203 REF (2) | 0.203 REF (2) | 0.008 REF (2) | 0.008 REF (2) |
+| b | 0.200 | 0.300 | 0.008 | 0.012 |
+| D (1) | 2.900 | 3.100 | 0.114 | 0.122 |
+| D1 | 2.250 | 2.350 | 0.089 | 0.093 |
+| E (1) | 2.900 | 3.100 | 0.114 | 0.122 |
+| E1 | 1.450 | 1.550 | 0.057 | 0.061 |
+| e | 0.650 TYP | 0.650 TYP | 0.026 TYP | 0.026 TYP |
+| L | 0.425 | 0.525 | 0.017 | 0.021 |
+| K | 0.200 REF (2) | 0.200 REF (2) | 0.008 REF (2) | 0.008 REF (2) |
+
+1. Plastic or metal protrusions of 0.075mm maximum per side are not included.
+2. REF is the abbreviation for Reference.
+3. This drawing is subject to change without notice.
+
+## NOTE:
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_007.png)
+
+## 14 TAPE AND REEL INFORMATION
+
+## REEL DIMENSIONS
+
+TAPE DIMENSION
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_049.png)
+
+NOTE: The picture is only for reference. Please make the object as the standard.
+
+## KEY PARAMETER LIST OF TAPE AND REEL
+
+| Package Type | Reel Diameter | Reel Width(mm) | A0 (mm) | B0 (mm) | K0 (mm) | P0 (mm) | P1 (mm) | P2 (mm) | W (mm) | Pin1 Quadrant |
+| - | - | - | - | - | - | - | - | - | - | - |
+| SOT23-5 | 7'' | 9.5 | 3.20 | 3.20 | 1.40 | 4.0 | 4.0 | 2.0 | 8.0 | Q3 |
+| DFN2X2-6 | 7'' | 9.5 | 2.30 | 2.30 | 1.10 | 4.0 | 4.0 | 2.0 | 8.0 | Q1 |
+| DFN3X3-8 | 13'' | 12.4 | 3.35 | 3.35 | 1.13 | 4.0 | 8.0 | 2.0 | 12.0 | Q1 |
+
+NOTE:
+
+1. All dimensions are nominal.
+
+2. Plastic or metal protrusions of 0.15mm maximum per side are not included.
+
+![Image](RS3215%20Datasheet%20%28Runic%29_files/img_045.png)
+
+## IMPORTANT NOTICE AND DISCLAIMER
+
+Jiangsu RUNIC Technology Co., Ltd. will accurately and reliably provide technical and reliability data (including data sheets), design resources (including reference designs), application or other design advice, WEB tools, safety information and other resources, without warranty of any defect, and will not make any express or implied warranty, including but not limited to the warranty of merchantability Implied warranty that it is suitable for a specific purpose or does not infringe the intellectual property rights of any third party.
+
+These resources are intended for skilled developers designing with RUNIC products You will be solely responsible for: (1) Selecting the appropriate products for your application; (2) Designing, validating and testing your application; (3) Ensuring your application meets applicable standards and any other safety, security or other requirements; (4) RUNIC and the RUNIC logo are registered trademarks of RUNIC INCORPORATED. All trademarks are the property of their respective owners; (5) For change details, review the revision history included in any revised document. The resources are subject to change without notice. Our company will not be liable for the use of this product and the infringement of patents or third-party intellectual property rights due to its use.
