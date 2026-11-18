@@ -396,10 +396,11 @@ test, which is well above the 1209 Vrms required.
   vs 5.72 mm), and it must be the same part on both ends, so the module boards
   change too.
 - **PCB spacing is a layout job.** On this board the two pad rows of the
-  transformer are the TS/LV boundary. Reading the recommended land pattern as
-  a 7.11 mm row pitch with 2.54 mm pads gives roughly **4.5 mm** between the
-  rows. Measure it on the real footprint in Altium. That would meet 4.0 mm
-  with conformal coating and the 3.0 mm clearance, but not 20 mm uncoated. **This board needs conformal coating**, or a slot under the
+  transformer are the TS/LV boundary. Measured on the placed footprint in
+  Altium: **6.4 mm** pad edge to pad edge (pads 1–3 end at x 149.58 mm, pads
+  4–6 start at x 155.98 mm). The earlier estimate from the datasheet land
+  pattern was 4.5 mm. 6.4 mm meets 4.0 mm with conformal coating and the
+  3.0 mm clearance, but not 20 mm uncoated. **This board needs conformal coating**, or a slot under the
   transformer. Mark the TS and LV areas on the silkscreen, as EV 4.3.6
   requires.
 - **Same part on both ends.** With identical module boards this is automatic.
@@ -833,7 +834,7 @@ Front panel and dimensions (inches), from the Manzanita datasheet.
 - **RJ12:** 1 `+5V_REGBUS`, 2 `REGBUS_STOP`, 4 `GND_REGBUS`. 3, 5, 6 unused.
 - **Connector:** J3, CONNFLY DS1133-S60BPX (C77859), ordered online, see [J3](#j3-charger-reg-bus-ts-side).
 - **Opto isolation (EV 1.2.1, max TS 403 V):** the PC817B is the TS/LV barrier. Test voltage 5000 Vrms > 1209 Vrms ✅, working voltage V_IORM 630 V peak > 403 V ✅, insulation 5×10¹⁰ Ω > 0.2 MΩ ✅. While charging the Reg Bus side also swings to the mains peak (230 V + 10 % ≈ 360 V peak), still < 630 V. A reinforced opto is not required.
-- **PCB (EV 4.3.6, 300–600 V):** 3.0 mm clearance and 20 mm creepage, or 4.0 mm with conformal coating. No opto package gives 20 mm, so coat it or slot under it, like the transformer. Check the gap across the SMD-4 (LS10.3) footprint is ≥ 4 mm.
+- **PCB (EV 4.3.6, 300–600 V):** 3.0 mm clearance and 20 mm creepage, or 4.0 mm with conformal coating. No opto package gives 20 mm, so coat it or slot under it, like the transformer. Measured on the placed footprint: 7.0 mm between the pad rows, so ≥ 4 mm passes.
 
 This is the soft stop. The hard stop is the AMS opening the charging shutdown circuit (EV 7.2).
 
@@ -1749,6 +1750,30 @@ Sources:
 FSUK rules EV 4.3.5 (`Reference Docs/Shared/FSUK Rules/`). Part numbers and stock
 from LCSC, 2026-10-23. Images: LCSC product photos.
 
+## PCB layout status
+
+Placement review of the per-sheet blocks (2026-11-18), measured from pad
+positions in `BMS-Master-PCB.PcbDoc`:
+
+- **Copper clearance:** no two pads on different nets are closer than 0.2 mm
+  (rule 0.127 mm). The overlaps Altium's placement check reports are silkscreen
+  and designator boxes.
+- **MCU decoupling (DS12288 §5.1.6 Figure 16):** one 100 nF per VDD pin within
+  1.6–2.1 mm: C5 → pin 1 (VBAT), C6 → 16, C3 → 32, C2 → 48, C4 → 64. VDDA/VREF+
+  (pins 29/28): C10 100 nF at 1.9 mm, C8 3.1 mm, C9 4.6 mm, C7 6.4 mm,
+  smallest first. On this footprint pin 1 is on the bottom edge.
+- **Buck:** matches SLUSEA4D Figure 12-2: input caps on the VIN/GND side
+  (C19 1.5 mm from VIN), L1 below SW, output caps after L1, FB divider and
+  C20 at FB on the far side from L1, BST and SS caps at their pins.
+- **Stack:** one straight line U7 → R22/R28 + caps → R21/R30 → D4 → T1 → J2,
+  COMH pins facing T1. T1 pad rows 6.4 mm apart.
+- **CAN2:** U5 → split termination → C31/C33 → TVS U6 → test points, in that
+  order; supply caps 1.5–1.7 mm from their pins.
+- **ISENSE, SDC, CHG:** compact, every link under 2 mm. U8 pad rows 7.0 mm
+  apart.
+
+Open items are in [To do → PCB](#to-do).
+
 ## Test points
 
 20 surface-mount test points (Keystone 5015, LCSC C2906768) are placed across
@@ -1822,6 +1847,9 @@ library).
 - [x] `MCU_STM32.SchDoc`: crystal X1 swapped to the 5032 SMD SCTF SX5A20.000F2010F30G (C5830635) with 12 pF C0G load caps C13/C14, see [Crystal](#crystal)
 - [x] Test points added (TP1–TP20, Keystone 5015), see [Test points](#test-points)
 - [x] `Power.SchDoc`: power indicator LEDs on +12V, +6V94, +5V, +3V3 (KT-0603R red, ~1 mA each), see [Power indicator LEDs](#power-indicator-leds)
+- [x] PCB document `BMS-Master-PCB.PcbDoc` created; design imported by ECO (152 footprints, 71 nets, diff pairs `CAN1`, `CAN2`, `COMH`, `ISO_COMH`, component classes only for the `CAN` sheet)
+- [x] PCB: 4-layer JLCPCB stackup (JLC04161H-7628, 1.6 mm) and JLCPCB design rules set (clearance 0.127 mm, track 0.2/0.3/1.0 mm, via 0.45/0.6/1.0 mm with 0.2/0.3/0.5 mm hole, polygon direct connect, mask 0.05 mm)
+- [x] PCB: per-sheet placement blocks for MCU, PWR, STACK, CAN2, ISENSE, SDC and CHG (CAN1 still to do), see [PCB layout status](#pcb-layout-status)
 
 ### To do
 
@@ -1851,8 +1879,20 @@ Next PCB version (v2):
 
 PCB:
 
-- [ ] Create the PCB document and layout
-- [ ] TS/LV spacing at the transformer: measure on the real footprint, plan conformal coating or a slot
+- [ ] Place `CAN1` (copy the `CAN2` block, e.g. with Room copy formats)
+- [ ] `R37` (1k, Q2 gate resistor, AMS_SDC): change the footprint from 0805 to 0402 like the rest of the block. It only sees 3.3 V (2.9 mA peak, ~8 mW), so 0805 buys nothing. `R36` (2K2) stays 0805: it takes the full LV voltage if `AMS_OK` is shorted (94 mW at 14.4 V, see [AMS_OK signal](#ams_ok-signal-to-the-sdc))
+- [ ] MCU block: move `C12` (NRST cap) next to U1 pin 7; it is 10 mm away beside SW2 (DS12288 Figure 27)
+- [ ] MCU block: move X1 ~2 mm closer to OSC_IN/OSC_OUT (pins 5/6, now ~6.6 mm)
+- [ ] MCU block: GND via right at `C5`'s GND pad (pin 1 VBAT has no VSS pin next to it)
+- [ ] Buck: top-layer GND pour with vias joining C17/C18 GND, U2 pin 4 and C22/C23 GND (now ~6.5 mm apart), as in SLUSEA4D Figure 12-2; route FB away from L1
+- [ ] Floorplan the blocks around U1 by pin side: top edge (pins 34–46: CAN, `CHG_EN`, `AMS_OK_MCU`, `BAL_EN_N`) → CAN, SDC, CHG; right edge (18–25: BQ SPI) → STACK; bottom edge (5–10: crystal, NRST, ISENSE ADC) → ISENSE; left edge (49–56: SWD) → J4. CAN2 now sits below U1 but its MCU pins are on the top edge
+- [ ] Put the bus-side parts at the connectors: CAN TVS + termination at J1 pins 3/4 and 6/7, D3 at J1 pins 13/14, F1/D1/D2 at J1 pin 1 (`LV_IN`)
+- [ ] Board outline: still the 152.4 × 101.6 mm default; PWR, ISENSE, SDC, CHG, CAN1, J1, J3, J4 and all test points are outside it
+- [ ] Confirm the inner-layer use: BQ79600 EVM uses both inner layers as GND (BQ79600 DS §10.1.1, SLUAA16A §2.1); L3 is currently named `PWR`
+- [ ] Diff-pair rules: 120 Ω for `CAN1`/`CAN2`, 100 Ω for `COMH`/`ISO_COMH`, outer layers only
+- [ ] Keep-out on all layers under T1 between the pad rows (SLUAA16A §2.4)
+- [ ] Silkscreen: shrink designators (~0.8 mm high, 0.12 mm stroke); they overlap on the 0402 parts
+- [ ] TS/LV spacing at the transformer: measured 6.4 mm, so plan conformal coating or a slot
 - [ ] Mark TS and LV areas on the silkscreen (EV 4.3.6)
 - [ ] Check LCSC stock for SOIC-8 `TCAN1462VDRQ1` before v2
 
